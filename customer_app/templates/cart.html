@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Your Cart</title>
+  <link href="{% static 'customer/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="mb-0">🛒 Your Cart</h3>
+      <a href="{% url 'customer_app:view_menu' %}" class="btn btn-outline-secondary">Continue Shopping</a>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        {% if lines %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="width: 140px;">Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for l in lines %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    {% if l.item.image %}
+                      <img src="{{ l.item.image.url }}" alt="{{ l.item.name }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;" class="mr-2">
+                    {% endif %}
+                    <div>
+                      <div class="fw-bold">{{ l.item.name }}</div>
+                      <div class="text-muted small">{{ l.item.category.Category_name }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <form method="post" action="{% url 'customer_app:update_cart_quantity' l.item.id %}" class="d-flex">
+                    {% csrf_token %}
+                    <input type="number" min="0" name="qty" value="{{ l.qty }}" class="form-control form-control-sm mr-2" style="max-width:80px;">
+                    <button class="btn btn-sm btn-primary" type="submit">Update</button>
+                  </form>
+                </td>
+                <td>₹ {{ l.item.price }}</td>
+                <td>₹ {{ l.line_total|floatformat:2 }}</td>
+                <td class="text-right">
+                  <a class="btn btn-sm btn-outline-danger" href="{% url 'customer_app:remove_from_cart' l.item.id %}">Remove</a>
+                </td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td colspan="3" class="text-right"><strong>Grand Total</strong></td>
+                <td colspan="2"><strong>₹ {{ total|floatformat:2 }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-right">
+          {% if request.session.Username %}
+            <a href="{% url 'customer_app:checkout' %}" class="btn btn-success btn-lg">
+              <i class="bi bi-credit-card"></i> Proceed to Checkout
+            </a>
+          {% else %}
+            <a href="{% url 'customer_app:user_log' %}" class="btn btn-success btn-lg">
+              <i class="bi bi-box-arrow-in-right"></i> Login to Checkout
+            </a>
+          {% endif %}
+        </div>
+        {% else %}
+          <div class="text-center py-5 text-muted">Your cart is empty.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <script src="{% static 'customer/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
+
+

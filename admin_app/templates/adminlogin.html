@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurant Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a, #312e81);
+      background-size: 400% 400%;
+      animation: gradientBG 10s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      width: 380px;
+      padding: 40px 45px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      text-align: center;
+      animation: fadeIn 1.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: #fff;
+      font-weight: 600;
+      margin-bottom: 25px;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+
+    .input-field {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .input-field input {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: 0.3s ease;
+    }
+
+    .input-field input:focus {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 10px #60a5fa;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      box-shadow: 0 0 15px #06b6d4;
+      transform: scale(1.03);
+    }
+
+    .link {
+      margin-top: 15px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+
+    .link a {
+      color: #93c5fd;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    .alert {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid rgba(255, 100, 100, 0.3);
+      border-radius: 8px;
+      color: #fca5a5;
+      padding: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="login-box">
+    <h2>Welcome Back Admin</h2>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'admin_app:admin_login' %}">
+      {% csrf_token %}
+      <div class="input-field">
+        <input type="text" name="username" placeholder="Enter Username" required>
+      </div>
+
+      <div class="input-field">
+        <input type="password" name="password" placeholder="Enter Password" required>
+      </div>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="link">
+      Don't have an account? <a href="{% url 'admin_app:register' %}">Register here</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Waiter Dashboard - Restaurant</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .stat-card {
+      border-left: 4px solid #007bff;
+      transition: transform 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    .stat-card.pending { border-left-color: #ffc107; }
+    .stat-card.active { border-left-color: #17a2b8; }
+    .stat-card.total { border-left-color: #28a745; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'waiter_app:waiter_dashboard' %}">
+        <i class="bi bi-shop"></i> Waiter Portal
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="{% url 'waiter_app:waiter_dashboard' %}">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_orders' %}">
+              <i class="bi bi-list-ul"></i> Orders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_menu' %}">
+              <i class="bi bi-menu-button-wide"></i> Menu
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_logout' %}">
+              <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <div class="mb-4">
+      <h2 class="fw-bold">Welcome, {{ waiter.display_name }}!</h2>
+      <p class="text-muted">Manage orders and assist customers</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="card stat-card total">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-muted mb-1">Total Orders</h6>
+                <h3 class="mb-0">{{ total_orders }}</h3>
+              </div>
+              <div class="text-primary" style="font-size: 2.5rem;">
+                <i class="bi bi-list-ul"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card stat-card pending">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-muted mb-1">Pending Orders</h6>
+                <h3 class="mb-0">{{ pending_orders }}</h3>
+              </div>
+              <div class="text-warning" style="font-size: 2.5rem;">
+                <i class="bi bi-clock-history"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card stat-card active">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-muted mb-1">Active Orders</h6>
+                <h3 class="mb-0">{{ active_orders }}</h3>
+              </div>
+              <div class="text-info" style="font-size: 2.5rem;">
+                <i class="bi bi-activity"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="{% url 'waiter_app:waiter_menu' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Order
+              </a>
+              <a href="{% url 'waiter_app:waiter_orders' %}" class="btn btn-info">
+                <i class="bi bi-list-ul"></i> View All Orders
+              </a>
+              <a href="{% url 'waiter_app:waiter_menu' %}" class="btn btn-success">
+                <i class="bi bi-menu-button-wide"></i> Browse Menu
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Orders</h5>
+            <a href="{% url 'waiter_app:waiter_orders' %}" class="btn btn-sm btn-outline-primary">View All</a>
+          </div>
+          <div class="card-body">
+            {% if recent_orders %}
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Table</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for order in recent_orders %}
+                      <tr>
+                        <td><strong>#{{ order.order_id }}</strong></td>
+                        <td>
+                          {% if order.table_number %}
+                            <span class="badge bg-primary">{{ order.table_number }}</span>
+                          {% else %}
+                            <span class="text-muted">-</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <small>
+                            {% for item in order.items.all|slice:":2" %}
+                              {{ item.quantity }}x {{ item.food_item.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if order.items.count > 2 %}
+                              <span class="text-muted">+{{ order.items.count|add:"-2" }} more</span>
+                            {% endif %}
+                          </small>
+                        </td>
+                        <td><strong>₹{{ order.total_amount }}</strong></td>
+                        <td>
+                          <span class="badge 
+                            {% if order.status == 'pending' %}bg-warning text-dark
+                            {% elif order.status == 'confirmed' %}bg-info
+                            {% elif order.status == 'preparing' %}bg-warning text-dark
+                            {% elif order.status == 'ready' %}bg-success
+                            {% elif order.status == 'completed' %}bg-secondary
+                            {% elif order.status == 'cancelled' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ order.get_status_display }}
+                          </span>
+                        </td>
+                        <td><small>{{ order.created_at|date:"M d, H:i" }}</small></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted mb-0">No orders yet. <a href="{% url 'waiter_app:waiter_menu' %}">Start a new order</a></p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

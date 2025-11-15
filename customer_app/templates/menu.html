@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Menu - DineEasy</title>
+
+  <!-- Favicons -->
+  <link href="{% static 'customer/assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'customer/assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Vendor CSS -->
+  <link href="{% static 'customer/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+
+  <!-- Template Main CSS -->
+  <link href="{% static 'customer/assets/css/main.css' %}" rel="stylesheet">
+
+  <style>
+    .menu-item {
+      border-radius: 15px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .menu-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    .menu-item img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .menu-item .content { padding: 1rem; }
+    .menu-item h5 { font-weight: 600; color: #d32f2f; }
+    .menu-item p { color: #666; font-size: 0.9rem; }
+    .menu-item .price { font-size: 1.1rem; font-weight: 600; color: #e65100; }
+    .menu-item .btn { border-radius: 8px; font-weight: 600; text-transform: uppercase; }
+    .menu-item .btn-cart { background: #f57c00; color: #fff; }
+    .menu-item .btn-buy { background: #d32f2f; color: #fff; }
+    .menu-item .btn-cart:hover { background: #e65100; }
+    .menu-item .btn-buy:hover { background: #b71c1c; }
+  </style>
+</head>
+
+<body>
+
+<header class="py-3 bg-light shadow-sm">
+  <div class="container d-flex justify-content-between align-items-center">
+    <h2 class="fw-bold text-danger mb-0">🍽️ DineEasy Menu</h2>
+    <div class="d-flex gap-2">
+      <a href="{% url 'customer_app:cust_home' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-house"></i> Home
+      </a>
+      {% if request.session.Username %}
+        <a href="{% url 'customer_app:view_orders' %}" class="btn btn-outline-info btn-sm">
+          <i class="bi bi-list-ul"></i> My Orders
+        </a>
+      {% endif %}
+      <a href="{% url 'customer_app:view_cart' %}" class="btn btn-outline-danger btn-sm position-relative">
+        <i class="bi bi-cart3"></i> Cart
+        {% if cart_count and cart_count > 0 %}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count }}</span>
+        {% endif %}
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="container py-5" data-aos="fade-up">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h3 class="fw-bold text-danger mb-0">Our Menu</h3>
+    <form method="get" class="d-flex gap-2" role="search">
+      <select name="category" class="form-select">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>
+            {{ cat.Category_name }}
+          </option>
+        {% endfor %}
+      </select>
+      <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search dishes or categories" style="min-width: 260px;">
+      <button class="btn btn-danger" type="submit"><i class="bi bi-search"></i> Search</button>
+    </form>
+  </div>
+
+  {% if foods %}
+    <div class="row g-4">
+      {% for item in foods %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <div class="menu-item">
+            {% if item.image %}
+              <img src="{{ item.image.url }}" alt="{{ item.name }}">
+            {% else %}
+              <img src="{% static 'customer/assets/img/menu/menu-item-1.png' %}" alt="{{ item.name }}">
+            {% endif %}
+            <div class="content">
+              <h5>{{ item.name }}</h5>
+              <p>{{ item.description|default:"Tasty dish"|truncatechars:80 }}</p>
+              <p class="price">₹ {{ item.price }}</p>
+              <div class="d-flex justify-content-between mt-3">
+                {% if request.session.Username %}
+                  <form method="post" action="{% url 'customer_app:add_to_cart' item.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-cart btn-sm" type="submit">Add to Cart</button>
+                  </form>
+                {% else %}
+                  <a class="btn btn-cart btn-sm" href="{% url 'customer_app:user_log' %}">Login to Order</a>
+                {% endif %}
+                <a class="btn btn-buy btn-sm" href="{% url 'customer_app:view_cart' %}">View Cart</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">No items found in this category.</div>
+    <ul>
+      {% for cat in categories %}
+        <li>{{ cat.Category_name }} (id {{ cat.id }})</li>
+      {% empty %}
+        <li>No categories available.</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</main>
+
+<!-- Vendor JS -->
+<script src="{% static 'customer/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'customer/assets/vendor/aos/aos.js' %}"></script>
+<script src="{% static 'customer/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+<script src="{% static 'customer/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+
+<!-- Flash messages: show only errors/warnings here to avoid delayed welcome popups -->
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+{% if messages %}
+  {% for i in messages %}
+    {% if i.tags == 'error' %}
+      <script>swal('{{ i|escapejs }}','', 'error');</script>
+    {% elif i.tags == 'warning' %}
+      <script>swal('{{ i|escapejs }}','', 'warning');</script>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+<!-- Optional: Minimal init for AOS/Lightbox if used by this page -->
+<script>
+  if (window.AOS) { AOS.init(); }
+  if (window.GLIGHTBOX) { GLightbox({ selector: '.glightbox' }); }
+</script>
+
+</body>
+</html>

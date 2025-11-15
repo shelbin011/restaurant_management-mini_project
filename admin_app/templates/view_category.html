@@ -1,0 +1,92 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+
+          <!-- Header -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="card-title text-primary mb-0">Manage Categories</h4>
+            <a href="{% url 'admin_app:add_category' %}" class="btn btn-gradient-primary btn-sm">
+              <i class="mdi mdi-plus-circle-outline"></i> Add Category
+            </a>
+          </div>
+
+          <p class="card-description text-muted">
+            View, edit, or delete food categories available in your restaurant.
+          </p>
+
+          <!-- Category Table -->
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="thead-light">
+                <tr>
+                  <th class="text-center">#</th>
+                  <th>Image</th>
+                  <th>Category Name</th>
+                  <th>Description</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for i in data %}
+                <tr>
+                  <td class="text-center">{{ forloop.counter }}</td>
+
+                  <td>
+                   {% if i.Image %}
+  <img src="{{ i.Image.url }}" class="category-img" alt="{{ i.Category_name }}">
+{% else %}
+  <span class="text-muted">No Image</span>
+{% endif %}
+
+                  </td>
+
+                  <td><strong>{{ i.Category_name }}</strong></td>
+                  <td style="max-width: 300px;">{{ i.Description }}</td>
+
+                  <td class="text-center">
+                    <a href="{% url 'admin_app:edit_category' i.id %}" class="btn btn-warning btn-sm text-white mr-1" title="Edit">
+                      <i class="mdi mdi-pencil"></i> Edit
+                    </a>
+                    <a href="{% url 'admin_app:delete_category' i.id %}" class="btn btn-danger btn-sm" title="Delete">
+                      <i class="mdi mdi-delete"></i> Delete
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    No categories available yet.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SweetAlert for messages -->
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+{% if messages %}
+  {% for i in messages %}
+    {% if i.tags == 'success' %}
+      <script>swal('{{i}}','','success');</script>
+    {% elif i.tags == 'error' %}
+      <script>swal('{{i}}','','error');</script>
+    {% else %}
+      <script>swal('{{i}}','','info');</script>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

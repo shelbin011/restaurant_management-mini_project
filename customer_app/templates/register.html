@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Register - Delicious Bites</title>
+
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #ff7043, #ff8a65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.container {
+  width: 420px;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.14);
+  padding: 2.2rem 1.8rem;
+  text-align: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  color: #e64a19;
+  font-weight: 700;
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 12px;
+  font-size: .95rem;
+}
+
+.title {
+  color: #e64a19;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1.1rem;
+}
+
+/* Form wrapper */
+.form-wrap {
+  width: 100%;          /* full width of container */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Form groups */
+.form-group {
+  position: relative;
+  margin-bottom: 1rem;
+  width: 100%;          /* full width of form-wrap */
+}
+
+.form-group i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ff7043;
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
+.form-wrap input[type="text"],
+.form-wrap input[type="email"],
+.form-wrap input[type="password"] {
+  width: 100%;           /* full width of parent */
+  height: 52px;
+  padding-left: 48px;
+  padding-right: 14px;
+  border-radius: 10px;
+  border: 1px solid #e6e6e6;
+  background: #fbfbfb;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+
+.form-wrap input:focus {
+  border-color: #ff7043;
+  box-shadow: 0 0 0 6px rgba(255,112,67,0.08);
+}
+
+/* Button alignment matches inputs exactly */
+.form-wrap button {
+  width: 100%;          /* full width of form-wrap */
+  height: 52px;
+  border: none;
+  border-radius: 10px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #ff7043, #ff5722);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.03rem;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.form-wrap button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,87,34,0.18);
+}
+
+.footer-text {
+  margin-top: 14px;
+  color: #666;
+  font-size: .95rem;
+}
+
+.footer-text a {
+  color: #e64a19;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 420px) {
+  .container { padding: 1.6rem 1.2rem; border-radius: 14px; }
+  .brand { font-size: 1.4rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="brand"><i class="bx bx-restaurant"></i>Delicious Bites</div>
+  <div class="subtitle">Create Your Account</div>
+  <div class="title">Register</div>
+
+  <div class="form-wrap">
+    <form method="post" action="{% url 'customer_app:save_reg' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <i class='bx bxs-user'></i>
+        <input type="text" name="username" placeholder="Username" required>
+      </div>
+      <div class="form-group">
+        <i class='bx bxs-envelope'></i>
+        <input type="email" name="email" placeholder="Email" required>
+      </div>
+      <div class="form-group">
+        <i class='bx bxs-phone'></i>
+        <input type="text" name="mobile" placeholder="Mobile" required>
+      </div>
+      <div class="form-group">
+        <i class='bx bxs-lock'></i>
+        <input type="password" name="password" placeholder="Password" required>
+      </div>
+      <div class="form-group">
+        <i class='bx bxs-lock-alt'></i>
+        <input type="password" name="confirm" placeholder="Confirm Password" required>
+      </div>
+      <button type="submit">SIGN UP</button>
+    </form>
+
+    <p class="footer-text">Already have an account? <a href="{% url 'customer_app:user_log' %}">Login here</a></p>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+    <script>swal("{{ msg }}", "", "{{ msg.tags }}");</script>
+  {% endfor %}
+{% endif %}
+
+</body>
+</html>

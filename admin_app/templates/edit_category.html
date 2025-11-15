@@ -1,0 +1,64 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="page-header">
+    <h3 class="page-title">
+      <i class="mdi mdi-pencil-box-outline menu-icon text-warning"></i> Edit Category
+    </h3>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_app:view_category' %}">Categories</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8 grid-margin stretch-card">
+      <div class="card shadow-lg border-0">
+        <div class="card-body">
+          <h4 class="card-title mb-4">Update Category Information</h4>
+
+          <form method="POST" action="{% url 'admin_app:update_category' data.id %}" enctype="multipart/form-data" class="forms-sample">
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label for="categoryName">Category Name</label>
+              <input type="text" class="form-control" id="categoryName" name="category" value="{{ data.Category_name }}" required>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea class="form-control" id="description" rows="4" name="description" required>{{ data.Description }}</textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="image">Category Image</label>
+              <input type="file" class="form-control" id="image" name="image">
+              {% if data.Image %}
+                <div class="mt-3">
+                  <p class="text-muted mb-2">Current Image:</p>
+                  <img src="{{ data.Image.url }}" alt="Current Image" class="rounded shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-gradient-warning btn-rounded mr-2">
+                <i class="mdi mdi-content-save"></i> Update
+              </button>
+              <a href="{% url 'admin_app:view_category' %}" class="btn btn-dark btn-rounded">
+                <i class="mdi mdi-arrow-left"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Checkout - Delicious Bites</title>
+  <link href="{% static 'customer/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="mb-0">🛒 Checkout</h3>
+      <a href="{% url 'customer_app:view_cart' %}" class="btn btn-outline-secondary">Back to Cart</a>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Delivery Information</h5>
+          </div>
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="delivery_address" class="form-label">Delivery Address *</label>
+                <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3" required 
+                  placeholder="Enter your complete delivery address"></textarea>
+              </div>
+              
+              <div class="mb-3">
+                <label for="contact_number" class="form-label">Contact Number *</label>
+                <input type="tel" class="form-control" id="contact_number" name="contact_number" required 
+                  placeholder="Enter your contact number" value="{{ customer.Mobile|default:'' }}">
+              </div>
+              
+              <div class="mb-3">
+                <label for="special_instructions" class="form-label">Special Instructions (Optional)</label>
+                <textarea class="form-control" id="special_instructions" name="special_instructions" rows="2" 
+                  placeholder="Any special delivery instructions..."></textarea>
+              </div>
+              
+              <div class="d-grid">
+                <button type="submit" class="btn btn-success btn-lg">
+                  <i class="bi bi-arrow-right"></i> Proceed to Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Order Summary</h5>
+          </div>
+          <div class="card-body">
+            {% for line in lines %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <div class="fw-bold">{{ line.item.name }}</div>
+                <small class="text-muted">Qty: {{ line.qty }}</small>
+              </div>
+              <div class="text-end">
+                <div class="fw-bold">₹ {{ line.line_total|floatformat:2 }}</div>
+                <small class="text-muted">₹ {{ line.item.price }} each</small>
+              </div>
+            </div>
+            {% if not forloop.last %}<hr class="my-2">{% endif %}
+            {% endfor %}
+            
+            <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Total Amount:</h5>
+              <h4 class="mb-0 text-success">₹ {{ total|floatformat:2 }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'customer/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  
+  <!-- Flash messages -->
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+        <script>swal('{{ message|escapejs }}','', 'error');</script>
+      {% elif message.tags == 'warning' %}
+        <script>swal('{{ message|escapejs }}','', 'warning');</script>
+      {% elif message.tags == 'success' %}
+        <script>swal('{{ message|escapejs }}','', 'success');</script>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</body>
+</html>
+

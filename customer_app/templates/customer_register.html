@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Register - Delicious Bites</title>
+
+<!-- Boxicons & Google Fonts -->
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8fafc;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating Background Circles */
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: float 6s ease-in-out infinite;
+}
+.circle.one { width: 400px; height: 400px; top: -100px; left: -100px; }
+.circle.two { width: 300px; height: 300px; bottom: -80px; right: -80px; animation-delay: 2s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(20px); }
+}
+
+/* Container */
+.container {
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.07);
+    width: 400px;
+    max-width: 95%;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    animation: slideInUp 0.8s ease-out;
+    color: #262833;
+}
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(50px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Headings */
+h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #FF5722, #FF8A65);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    color: #BF360C;
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+}
+
+p.subtitle {
+    color: #757575;
+    font-weight: 300;
+    margin-bottom: 1.5rem;
+}
+
+/* Form Styles */
+.form-group {
+    position: relative;
+    margin-bottom: 1.3rem;
+    width: 100%;
+    max-width: 335px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.form-group i {
+    position: absolute;
+    top: 50%;
+    left: 1rem;
+    transform: translateY(-50%);
+    color: #FF5722;
+    font-size: 1.2rem;
+}
+
+.form-group input {
+    width: 100%;
+    min-width: 0px;
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+    padding: 1rem 1rem 1rem 3rem;
+    border-radius: 0.8rem;
+    border: 2px solid #e0e0e0;
+    background: #f1f3f9;
+    outline: none;
+    font-size: 1rem;
+    color: #262833;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    border-color: #FF5722;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255,87,34,0.1);
+}
+
+button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.8rem;
+    background: linear-gradient(135deg, #f57c00, #e65100);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    box-shadow: 0 10px 20px rgba(255,87,34,0.11);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #BF360C, #FF5722);
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(255,87,34,0.4);
+}
+
+.footer-text {
+    margin-top: 1.3rem;
+    color: #757575;
+    font-size: 0.9rem;
+}
+
+.footer-text a {
+    color: #FF5722;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footer-text a:hover {
+    color: #BF360C;
+    text-decoration: underline;
+}
+</style>
+</head>
+
+<body>
+
+<div class="circle one"></div>
+<div class="circle two"></div>
+
+<div class="container">
+    <h1>🍽️ Delicious Bites</h1>
+    <p class="subtitle">Create Your Account</p>
+    <h2>Register</h2>
+
+    <form method="post" action="{% url 'customer_app:save_reg' %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <i class='bx bxs-user'></i>
+            <input type="text" name="username" placeholder="Username" required>
+        </div>
+
+        <div class="form-group">
+            <i class='bx bxs-envelope'></i>
+            <input type="email" name="email" placeholder="Email" required>
+        </div>
+
+        <div class="form-group">
+            <i class='bx bxs-phone'></i>
+            <input type="text" name="mobile" placeholder="Mobile" required>
+        </div>
+
+        <div class="form-group">
+            <i class='bx bxs-lock-alt'></i>
+            <input type="password" name="password" placeholder="Password" required>
+        </div>
+
+        <div class="form-group">
+            <i class='bx bxs-lock'></i>
+            <input type="password" name="confirm" placeholder="Confirm Password" required>
+        </div>
+
+        <button type="submit">Sign Up</button>
+
+        <p class="footer-text">
+            Already have an account? <a href="{% url 'customer_app:user_log' %}">Login here</a>
+        </p>
+    </form>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <script>
+      swal("{{ msg }}", "", "{{ msg.tags }}");
+  </script>
+  {% endfor %}
+{% endif %}
+
+</body>
+</html>
+
+
+
+

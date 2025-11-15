@@ -1,0 +1,63 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title text-primary">Add Category</h4>
+          <p class="card-description text-muted">Add a new food category to your restaurant menu.</p>
+
+          <!-- ✅ Updated action to match your existing view -->
+          <form class="forms-sample" method="post" action="{% url 'admin_app:save_category' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label for="exampleInputName1">Category Name</label>
+              <input type="text" class="form-control" id="exampleInputName1" name="category" placeholder="Enter category name" required>
+            </div>
+
+            <div class="form-group">
+              <label for="exampleTextarea1">Description</label>
+              <textarea class="form-control" id="exampleTextarea1" name="description" rows="4" placeholder="Enter category description" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="exampleImage1">Category Image</label>
+              <input type="file" class="form-control" id="exampleImage1" name="image" accept="image/*">
+            </div>
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-gradient-primary mr-2">
+                <i class="mdi mdi-content-save"></i> Submit
+              </button>
+              <a href="{% url 'admin_app:view_category' %}" class="btn btn-dark">
+                <i class="mdi mdi-cancel"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ SweetAlert message handling -->
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+{% if messages %}
+  {% for i in messages %}
+    {% if i.tags == 'success' %}
+      <script>swal('{{ i }}', '', 'success');</script>
+    {% elif i.tags == 'error' %}
+      <script>swal('{{ i }}', '', 'error');</script>
+    {% elif i.tags == 'warning' %}
+      <script>swal('{{ i }}', '', 'warning');</script>
+    {% else %}
+      <script>swal('{{ i }}', '', 'info');</script>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

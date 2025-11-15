@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Waiter Menu - Restaurant</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .menu-item {
+      border-radius: 15px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin-bottom: 20px;
+    }
+    .menu-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    .menu-item img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .menu-item .content { padding: 1rem; }
+    .menu-item h5 { font-weight: 600; color: #d32f2f; }
+    .menu-item p { color: #666; font-size: 0.9rem; }
+    .menu-item .price { font-size: 1.1rem; font-weight: 600; color: #e65100; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'waiter_app:waiter_dashboard' %}">
+        <i class="bi bi-shop"></i> Waiter Portal
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_dashboard' %}">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_orders' %}">
+              <i class="bi bi-list-ul"></i> Orders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{% url 'waiter_app:waiter_menu' %}">
+              <i class="bi bi-menu-button-wide"></i> Menu
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{% url 'waiter_app:waiter_checkout' %}">
+              <i class="bi bi-cart3"></i> Cart
+              {% if cart_count and cart_count > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count }}</span>
+              {% endif %}
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'waiter_app:waiter_logout' %}">
+              <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="fw-bold text-danger mb-0"><i class="bi bi-menu-button-wide"></i> Menu</h2>
+      <form method="get" class="d-flex gap-2" role="search">
+        <select name="category" class="form-select" style="max-width: 200px;">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>
+              {{ cat.Category_name }}
+            </option>
+          {% endfor %}
+        </select>
+        <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search dishes..." style="min-width: 250px;">
+        <button class="btn btn-danger" type="submit"><i class="bi bi-search"></i> Search</button>
+      </form>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if foods %}
+      <div class="row g-4">
+        {% for item in foods %}
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="menu-item">
+              {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.name }}">
+              {% else %}
+                <img src="{% static 'customer/assets/img/menu/menu-item-1.png' %}" alt="{{ item.name }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+              {% endif %}
+              <div class="content">
+                <h5>{{ item.name }}</h5>
+                <p>{{ item.description|default:"Delicious dish"|truncatechars:60 }}</p>
+                <p class="price mb-3">₹ {{ item.price }}</p>
+                <form method="post" action="{% url 'waiter_app:waiter_menu' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="add_to_cart">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <button class="btn btn-primary w-100" type="submit">
+                    <i class="bi bi-cart-plus"></i> Add to Cart
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No items found in this category.
+      </div>
+    {% endif %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

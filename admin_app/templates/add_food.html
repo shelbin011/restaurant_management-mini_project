@@ -1,0 +1,71 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="row">
+    <div class="col-md-8 grid-margin stretch-card mx-auto">
+      <div class="card shadow-lg border-0">
+        <div class="card-body">
+          <h4 class="card-title text-primary mb-3">🍽️ Add Food Item</h4>
+          <p class="card-description">Add a new food item under a specific category.</p>
+
+          <form method="post" action="{% url 'admin_app:save_food' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label>Food Name</label>
+              <input type="text" name="name" class="form-control" placeholder="Enter food name" required>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="3" placeholder="Enter food description" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Price</label>
+              <input type="number" name="price" step="0.01" class="form-control" placeholder="Enter price" required>
+            </div>
+
+            <div class="form-group">
+              <label>Category</label>
+              <select name="category" class="form-control" required>
+                <option value="">-- Select Category --</option>
+                {% for c in categories %}
+                  <option value="{{ c.id }}">{{ c.Category_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Image</label>
+              <input type="file" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <div class="form-check form-check-primary mb-3">
+              <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" name="availability" checked> Available
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-gradient-primary mr-2">Submit</button>
+            <a href="{% url 'admin_app:view_food' %}" class="btn btn-dark">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SweetAlert for messages -->
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+{% if messages %}
+  {% for i in messages %}
+    <script>
+      swal('{{ i }}', '', '{{ i.tags }}');
+    </script>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Payment - Delicious Bites</title>
+  <link href="{% static 'customer/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <style>
+    .payment-method-card {
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .payment-method-card:hover {
+      border-color: #28a745;
+      background-color: #f8f9fa;
+    }
+    .payment-method-card.selected {
+      border-color: #28a745;
+      background-color: #d4edda;
+    }
+    .order-summary {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="mb-0">💳 Payment</h3>
+      <a href="{% url 'customer_app:view_orders' %}" class="btn btn-outline-secondary">View Orders</a>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Select Payment Method</h5>
+          </div>
+          <div class="card-body">
+            <form method="post" id="paymentForm">
+              {% csrf_token %}
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="payment-method-card p-3" onclick="selectPaymentMethod('cash')">
+                    <input type="radio" name="payment_method" value="cash" id="cash" style="display: none;">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
+                      <div class="ms-3">
+                        <h6 class="mb-1">Cash on Delivery</h6>
+                        <small class="text-muted">Pay when your order arrives</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="payment-method-card p-3" onclick="selectPaymentMethod('card')">
+                    <input type="radio" name="payment_method" value="card" id="card" style="display: none;">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-credit-card text-primary" style="font-size: 2rem;"></i>
+                      <div class="ms-3">
+                        <h6 class="mb-1">Credit/Debit Card</h6>
+                        <small class="text-muted">Pay securely with your card</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="payment-method-card p-3" onclick="selectPaymentMethod('upi')">
+                    <input type="radio" name="payment_method" value="upi" id="upi" style="display: none;">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-phone text-info" style="font-size: 2rem;"></i>
+                      <div class="ms-3">
+                        <h6 class="mb-1">UPI Payment</h6>
+                        <small class="text-muted">Pay with UPI apps</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="payment-method-card p-3" onclick="selectPaymentMethod('netbanking')">
+                    <input type="radio" name="payment_method" value="netbanking" id="netbanking" style="display: none;">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-bank text-warning" style="font-size: 2rem;"></i>
+                      <div class="ms-3">
+                        <h6 class="mb-1">Net Banking</h6>
+                        <small class="text-muted">Pay with internet banking</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-success btn-lg" id="payButton">
+                  <i class="bi bi-lock"></i> Complete Payment - ₹ {{ order.total_amount|floatformat:2 }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="order-summary">
+          <h5 class="mb-3">Order Details</h5>
+          <div class="mb-3">
+            <strong>Order ID:</strong> <span class="text-primary">{{ order.order_id }}</span>
+          </div>
+          <div class="mb-3">
+            <strong>Customer:</strong> {{ order.customer.Username }}
+          </div>
+          <div class="mb-3">
+            <strong>Delivery Address:</strong><br>
+            <small>{{ order.delivery_address }}</small>
+          </div>
+          <div class="mb-3">
+            <strong>Contact:</strong> {{ order.contact_number }}
+          </div>
+          {% if order.special_instructions %}
+          <div class="mb-3">
+            <strong>Special Instructions:</strong><br>
+            <small>{{ order.special_instructions }}</small>
+          </div>
+          {% endif %}
+          <hr>
+          <div class="mb-3">
+            <strong>Items Ordered:</strong>
+          </div>
+          {% for item in order.items.all %}
+          <div class="d-flex justify-content-between mb-2">
+            <small>{{ item.food_item.name }} x{{ item.quantity }}</small>
+            <small>₹ {{ item.price|floatformat:2 }}</small>
+          </div>
+          {% endfor %}
+          <hr>
+          <div class="d-flex justify-content-between">
+            <h6 class="mb-0">Total Amount:</h6>
+            <h5 class="mb-0 text-success">₹ {{ order.total_amount|floatformat:2 }}</h5>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'customer/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  
+  <script>
+    function selectPaymentMethod(method) {
+      // Remove selected class from all cards
+      document.querySelectorAll('.payment-method-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Uncheck all radio buttons
+      document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.checked = false;
+      });
+      
+      // Select the clicked method
+      document.getElementById(method).checked = true;
+      document.getElementById(method).closest('.payment-method-card').classList.add('selected');
+    }
+    
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+      const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+      if (!selectedMethod) {
+        e.preventDefault();
+        alert('Please select a payment method.');
+        return;
+      }
+      
+      const button = document.getElementById('payButton');
+      button.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+      button.disabled = true;
+    });
+  </script>
+  
+  <!-- Flash messages -->
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+        <script>swal('{{ message|escapejs }}','', 'error');</script>
+      {% elif message.tags == 'warning' %}
+        <script>swal('{{ message|escapejs }}','', 'warning');</script>
+      {% elif message.tags == 'success' %}
+        <script>swal('{{ message|escapejs }}','', 'success');</script>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</body>
+</html>
+
