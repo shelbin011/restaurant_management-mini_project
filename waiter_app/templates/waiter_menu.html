@@ -108,7 +108,7 @@
               {% if item.image %}
                 <img src="{{ item.image.url }}" alt="{{ item.name }}">
               {% else %}
-                <img src="{% static 'customer/assets/img/menu/menu-item-1.png' %}" alt="{{ item.name }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                <img src="{% static 'waiter_app/images/menu/menu-item-1.png' %}" alt="{{ item.name }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
               {% endif %}
               <div class="content">
                 <h5>{{ item.name }}</h5>

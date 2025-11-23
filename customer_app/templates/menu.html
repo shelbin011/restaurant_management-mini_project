@@ -6,18 +6,18 @@
   <title>Menu - DineEasy</title>
 
   <!-- Favicons -->
-  <link href="{% static 'customer/assets/img/favicon.png' %}" rel="icon">
-  <link href="{% static 'customer/assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+  <link href="{% static 'customer_app/images/favicon.png' %}" rel="icon">
+  <link href="{% static 'customer_app/images/apple-touch-icon.png' %}" rel="apple-touch-icon">
 
   <!-- Vendor CSS -->
-  <link href="{% static 'customer/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-  <link href="{% static 'customer/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-  <link href="{% static 'customer/assets/vendor/aos/aos.css' %}" rel="stylesheet">
-  <link href="{% static 'customer/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
-  <link href="{% static 'customer/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
 
   <!-- Template Main CSS -->
-  <link href="{% static 'customer/assets/css/main.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/css/main.css' %}" rel="stylesheet">
 
   <style>
     .menu-item {
@@ -97,7 +97,7 @@
             {% if item.image %}
               <img src="{{ item.image.url }}" alt="{{ item.name }}">
             {% else %}
-              <img src="{% static 'customer/assets/img/menu/menu-item-1.png' %}" alt="{{ item.name }}">
+              <img src="{% static 'customer_app/images/menu/menu-item-1.png' %}" alt="{{ item.name }}">
             {% endif %}
             <div class="content">
               <h5>{{ item.name }}</h5>
@@ -132,10 +132,10 @@
 </main>
 
 <!-- Vendor JS -->
-<script src="{% static 'customer/assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'customer/assets/vendor/aos/aos.js' %}"></script>
-<script src="{% static 'customer/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
-<script src="{% static 'customer/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+<script src="{% static 'customer_app/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'customer_app/vendors/aos/aos.js' %}"></script>
+<script src="{% static 'customer_app/vendors/glightbox/js/glightbox.min.js' %}"></script>
+<script src="{% static 'customer_app/vendors/swiper/swiper-bundle.min.js' %}"></script>
 
 <!-- Flash messages: show only errors/warnings here to avoid delayed welcome popups -->
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
