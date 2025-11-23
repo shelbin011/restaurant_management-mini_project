@@ -110,7 +110,7 @@
                     <button class="btn btn-cart btn-sm" type="submit">Add to Cart</button>
                   </form>
                 {% else %}
-                  <a class="btn btn-cart btn-sm" href="{% url 'customer_app:user_log' %}">Login to Order</a>
+                  <a class="btn btn-cart btn-sm" href="{% url 'login' %}">Login to Order</a>
                 {% endif %}
                 <a class="btn btn-buy btn-sm" href="{% url 'customer_app:view_cart' %}">View Cart</a>
               </div>

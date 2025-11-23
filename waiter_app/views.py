@@ -16,28 +16,27 @@ def waiter_home(request):
     return redirect('waiter_app:waiter_dashboard')
 
 def waiter_login(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        # Authenticate using Django's authentication system
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            try:
-                waiter = Waiter.objects.get(user=user)
-                # Login the user (sets session properly)
-                auth_login(request, user)
-                request.session['waiter_id'] = waiter.id
-                request.session['waiter_name'] = waiter.display_name
-                messages.success(request, f'Welcome, {waiter.display_name}!')
-                return redirect('waiter_app:waiter_dashboard')
-            except Waiter.DoesNotExist:
-                messages.error(request, 'This user is not registered as a waiter.')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    
-    return render(request, 'waiter_login.html')
+    # All GET requests should go to the unified login page
+    if request.method == 'GET':
+        return redirect('login')
+
+    # Keep POST handling for compatibility if something posts directly to this view
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        try:
+            waiter = Waiter.objects.get(user=user)
+            auth_login(request, user)
+            request.session['waiter_id'] = waiter.id
+            request.session['waiter_name'] = waiter.display_name
+            messages.success(request, f'Welcome, {waiter.display_name}!')
+            return redirect('waiter_app:waiter_dashboard')
+        except Waiter.DoesNotExist:
+            messages.error(request, 'This user is not registered as a waiter.')
+    else:
+        messages.error(request, 'Invalid username or password.')
+    return redirect('login')
 
 def waiter_logout(request):
     if 'waiter_id' in request.session:

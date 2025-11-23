@@ -156,12 +156,20 @@
         <input type="password" name="confirm_password" placeholder="Confirm Password" required>
       </div>
 
+      <div class="input-field">
+        <input type="password" name="admin_secret" placeholder="Admin Registration Code" required>
+      </div>
+
       <button type="submit">Register</button>
     </form>
 
     <div class="link">
-      Already have an account? <a href="{% url 'admin_app:admin_login' %}">Login here</a>
+      Already have an account? <a href="{% url 'login' %}">Login here</a>
     </div>
+
+    {% if not admin_reg_enabled %}
+      <div style="margin-top:12px;color:#ffcdd2;font-size:0.95rem;">Admin registration is disabled. Set the environment variable <code>ADMIN_REG_SECRET</code> to enable protected registration.</div>
+    {% endif %}
   </div>
 </body>
 </html>

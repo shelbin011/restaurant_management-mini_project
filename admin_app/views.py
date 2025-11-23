@@ -5,6 +5,8 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.conf import settings
+import os
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
@@ -18,7 +20,8 @@ from waiter_app.models import Waiter
 # Create your views here.
 
 def admin_login_page(req):
-    return render(req,'adminlogin.html')
+    # Redirect to unified login page to maintain a single entry point
+    return redirect('login')
 
 def admin_root(request):
     if 'username' in request.session:
@@ -63,6 +66,15 @@ def delete_logout(request):
 
 def register(request):
     if request.method == 'POST':
+        # Protected admin registration: require secret code
+        secret_provided = request.POST.get('admin_secret')
+        secret_expected = getattr(settings, 'ADMIN_REG_SECRET', None) or os.environ.get('ADMIN_REG_SECRET')
+        if not secret_expected:
+            messages.error(request, "Admin registration is disabled on this deployment. Set ADMIN_REG_SECRET to enable it.")
+            return redirect('admin_app:register')
+        if not secret_provided or secret_provided != secret_expected:
+            messages.error(request, "Invalid admin registration code.")
+            return redirect('admin_app:register')
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
@@ -83,9 +95,10 @@ def register(request):
         # Create the user
         User.objects.create_user(username=username, email=email, password=password)
         messages.success(request, "Registration successful! Please log in.")
-        return redirect('admin_app:admin_login')
-
-    return render(request, 'register.html')
+        return redirect('login')
+    # For GET, show register form. If no secret is configured, show a message in the template.
+    secret_expected = getattr(settings, 'ADMIN_REG_SECRET', None) or os.environ.get('ADMIN_REG_SECRET')
+    return render(request, 'register.html', {'admin_reg_enabled': bool(secret_expected)})
 
 def index(request):
     # Require admin session to access dashboard

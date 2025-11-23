@@ -61,8 +61,11 @@ def user_login(request):
 
 
 def delete_user(request):
-    del request.session['Username']
-    del request.session['Password']
+    # Safely remove customer session keys (avoid KeyError causing 500)
+    request.session.pop('Username', None)
+    request.session.pop('Password', None)
+    # Also clear cart if present
+    request.session.pop('cart', None)
     messages.success(request, "Logout Successfully")
     return redirect('customer_app:cust_home')
 

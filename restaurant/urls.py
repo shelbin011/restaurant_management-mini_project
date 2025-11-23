@@ -15,17 +15,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from . import views as project_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login/', project_views.unified_login, name='login'),
+    path('logout/', project_views.unified_logout, name='logout'),
     path('admin_app/', include(('admin_app.urls', 'admin_app'), namespace='admin_app')),
     path('', include(('customer_app.urls', 'customer_app'), namespace='customer_app')),
     path('waiter_app/', include(('waiter_app.urls', 'waiter_app'), namespace='waiter_app')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
+# Serve media files in development or when explicitly requested via env var
+import os
+
+if settings.DEBUG or os.environ.get('SERVE_MEDIA') == '1':
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
