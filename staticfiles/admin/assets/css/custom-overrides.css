@@ -1,0 +1,93 @@
+.form-control,
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--single .select2-search__field,
+.typeahead,
+.tt-query,
+.tt-hint {
+  background-color: #ffffff !important;
+  color: #1f2933 !important;
+  border-color: #cfd4da !important;
+}
+
+.form-control::placeholder,
+.select2-container--default .select2-selection--single::placeholder,
+.select2-container--default .select2-selection--single .select2-search__field::placeholder,
+.typeahead::placeholder,
+.tt-query::placeholder,
+.tt-hint::placeholder {
+  color: #6c757d !important;
+  opacity: 1;
+}
+
+.form-control:focus,
+.select2-container--default .select2-selection--single:focus,
+.select2-container--default .select2-selection--single .select2-search__field:focus,
+.typeahead:focus,
+.tt-query:focus,
+.tt-hint:focus {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #80bdff !important;
+  box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #f0f2f5 !important;
+  color: #6b7280 !important;
+}
+
+/* Fix visibility ONLY for list-group-items which have white backgrounds */
+/* All other elements (card titles, card body, tables on dark backgrounds) use theme defaults (white text) */
+
+/* List items have white backgrounds, so they need dark text */
+.list-group-item {
+  background-color: #ffffff !important;
+  color: #1f2933 !important;
+}
+
+.list-group-item span,
+.list-group-item small,
+.list-group-item div {
+  color: #1f2933 !important;
+}
+
+.list-group-item .text-muted {
+  color: #6c757d !important;
+}
+
+/* Ensure all child elements in list items are visible */
+.list-group-item * {
+  color: #1f2933 !important;
+}
+
+/* Icons in list items should be visible */
+.list-group-item i {
+  opacity: 1 !important;
+}
+
+/* Badges should have proper colors */
+.badge {
+  color: #ffffff !important;
+}
+
+.badge-warning {
+  background-color: #ffab00 !important;
+  color: #ffffff !important;
+}
+
+.badge-success {
+  background-color: #00d25b !important;
+  color: #ffffff !important;
+}
+
+.badge-info {
+  background-color: #8f5fe8 !important;
+  color: #ffffff !important;
+}
+
+.badge-secondary {
+  background-color: #6c7293 !important;
+  color: #ffffff !important;
+}
+
