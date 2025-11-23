@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 # ================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -117,12 +118,16 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # This is where Django looks for your local static folder
+# Needed for collectstatic to find all static files
 STATICFILES_DIRS = [
     BASE_DIR / "static"
 ]
 
-# This is where Render will collect static files
+# This is where Render will collect static files (production)
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# WhiteNoise configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 # ================================
