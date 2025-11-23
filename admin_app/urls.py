@@ -26,6 +26,8 @@ path('edit_food/<int:food_id>/', views.edit_food, name='edit_food'),
     path('view_customers/', views.view_customers, name='view_customers'),
     path('view_orders/', views.view_orders, name='view_orders'),
     path('update_order_status/<str:order_id>/', views.update_order_status, name='update_order_status'),
+    path('reports/orders/', views.order_reports, name='order_reports'),
+    path('reports/orders/pdf/', views.download_order_report_pdf, name='download_order_report_pdf'),
     
     path('view_waiters/', views.view_waiters, name='view_waiters'),
     path('add_waiter/', views.add_waiter, name='add_waiter'),

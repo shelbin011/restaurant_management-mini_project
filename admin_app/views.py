@@ -1,9 +1,20 @@
-from django.shortcuts import render,redirect
+from datetime import datetime, timedelta, time
+import io
+from decimal import Decimal
+
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from .models import categorydb,fooditems
-from django.contrib import messages
+from django.contrib.auth.models import User
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
+from django.db.models.functions import TruncDate
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+
+from .models import categorydb, fooditems
+from customer_app.models import Order, OrderItem, Payment, regdb
+from waiter_app.models import Waiter
 # Create your views here.
 
 def admin_login_page(req):
@@ -120,10 +131,6 @@ def save_category(req):
 def view_category(request):
     data = categorydb.objects.all()
     return render(request, 'view_category.html', {'data': data})
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import categorydb
-from customer_app.models import regdb
 
 def edit_category(request, id):
     data = get_object_or_404(categorydb, id=id)
@@ -299,6 +306,197 @@ def view_orders(request):
     }
     return render(request, 'view_orders.html', context)
 
+
+def _parse_date_param(date_str, fallback_dt, end_of_day=False):
+    """
+    Convert a yyyy-mm-dd string into an aware datetime. Falls back to provided datetime.
+    """
+    parsed_date = parse_date(date_str) if date_str else None
+    if parsed_date:
+        combined_time = time.max if end_of_day else time.min
+        candidate = datetime.combine(parsed_date, combined_time)
+        aware_candidate = timezone.make_aware(candidate)
+        return aware_candidate
+    return fallback_dt
+
+
+def _build_order_report_data(start_param, end_param, status_param):
+    now = timezone.now()
+    default_start = now - timedelta(days=30)
+    start_dt = _parse_date_param(start_param, default_start)
+    end_dt = _parse_date_param(end_param, now, end_of_day=True)
+
+    if start_dt > end_dt:
+        start_dt, end_dt = end_dt - timedelta(days=30), end_dt
+
+    orders_qs = Order.objects.select_related('customer', 'payment').prefetch_related('items__food_item')
+    filtered_orders = orders_qs.filter(created_at__range=(start_dt, end_dt))
+    if status_param:
+        filtered_orders = filtered_orders.filter(status=status_param)
+    filtered_orders = filtered_orders.order_by('-created_at')
+
+    status_label_map = dict(Order.ORDER_STATUS_CHOICES)
+
+    total_orders = filtered_orders.count()
+    total_revenue = filtered_orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    average_order_value = (total_revenue / total_orders) if total_orders else Decimal('0.00')
+    completed_orders = filtered_orders.filter(status='completed').count()
+    cancelled_orders = filtered_orders.filter(status='cancelled').count()
+
+    status_breakdown = list(
+        filtered_orders.values('status').annotate(count=Count('id')).order_by('-count')
+    )
+    for row in status_breakdown:
+        row['label'] = status_label_map.get(row['status'], row['status'].title())
+
+    top_customers = list(
+        filtered_orders.values('customer__Username')
+        .annotate(order_count=Count('id'), total_spent=Sum('total_amount'))
+        .order_by('-total_spent')[:5]
+    )
+
+    order_items = OrderItem.objects.filter(order__in=filtered_orders).annotate(
+        line_total=ExpressionWrapper(
+            F('quantity') * F('price'),
+            output_field=DecimalField(max_digits=12, decimal_places=2)
+        )
+    )
+
+    top_items = list(
+        order_items.values('food_item__name')
+        .annotate(quantity=Sum('quantity'), revenue=Sum('line_total'))
+        .order_by('-quantity')[:5]
+    )
+
+    daily_summary = list(
+        filtered_orders.annotate(day=TruncDate('created_at'))
+        .values('day')
+        .annotate(order_count=Count('id'), revenue=Sum('total_amount'))
+        .order_by('day')
+    )
+
+    return {
+        'orders': filtered_orders,
+        'start_dt': start_dt,
+        'end_dt': end_dt,
+        'status_filter': status_param,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+        'average_order_value': average_order_value,
+        'completed_orders': completed_orders,
+        'cancelled_orders': cancelled_orders,
+        'status_breakdown': status_breakdown,
+        'top_customers': top_customers,
+        'top_items': top_items,
+        'daily_summary': daily_summary,
+        'status_label_map': status_label_map,
+        'report_generated_at': now,
+    }
+
+
+def order_reports(request):
+    if 'username' not in request.session:
+        messages.warning(request, "Please log in to access the admin dashboard.")
+        return redirect('admin_app:admin_login_page')
+
+    start_param = request.GET.get('start_date')
+    end_param = request.GET.get('end_date')
+    status_param = request.GET.get('status', '')
+
+    report_data = _build_order_report_data(start_param, end_param, status_param)
+
+    context = {
+        **report_data,
+        'start_date_value': report_data['start_dt'].date().isoformat(),
+        'end_date_value': report_data['end_dt'].date().isoformat(),
+        'status_choices': Order.ORDER_STATUS_CHOICES,
+        'active_page': 'reports',
+        'status_filter_label': report_data['status_label_map'].get(status_param, 'All Orders') if status_param else 'All Orders',
+    }
+    return render(request, 'order_reports.html', context)
+
+
+def download_order_report_pdf(request):
+    if 'username' not in request.session:
+        messages.warning(request, "Please log in to access the admin dashboard.")
+        return redirect('admin_app:admin_login_page')
+
+    try:
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.lib.units import inch
+        from reportlab.pdfgen import canvas
+    except ImportError:
+        messages.error(
+            request,
+            "PDF generation requires the ReportLab package. Please install it with 'pip install reportlab'."
+        )
+        return redirect('admin_app:order_reports')
+
+    start_param = request.GET.get('start_date')
+    end_param = request.GET.get('end_date')
+    status_param = request.GET.get('status', '')
+    report_data = _build_order_report_data(start_param, end_param, status_param)
+    orders = list(report_data['orders'])
+
+    buffer = io.BytesIO()
+    page_size = landscape(A4)
+    pdf = canvas.Canvas(buffer, pagesize=page_size)
+    width, height = page_size
+
+    def new_page():
+        pdf.showPage()
+        pdf.setFont("Helvetica", 10)
+        return height - 50
+
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(40, height - 40, "Order Performance Report")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(40, height - 60, f"Date Range: {report_data['start_dt'].date()} to {report_data['end_dt'].date()}")
+    pdf.drawString(40, height - 75, f"Status Filter: {report_data['status_label_map'].get(status_param, 'All') if status_param else 'All'}")
+    pdf.drawString(40, height - 90, f"Generated: {report_data['report_generated_at'].strftime('%Y-%m-%d %H:%M')}")
+
+    y = height - 120
+    summary_lines = [
+        f"Total Orders: {report_data['total_orders']}",
+        f"Total Revenue: ₹{report_data['total_revenue']}",
+        f"Average Order Value: ₹{report_data['average_order_value']}",
+        f"Completed Orders: {report_data['completed_orders']}",
+        f"Cancelled Orders: {report_data['cancelled_orders']}",
+    ]
+    for line in summary_lines:
+        pdf.drawString(40, y, line)
+        y -= 15
+
+    y -= 10
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(40, y, "Orders")
+    pdf.setFont("Helvetica-Bold", 10)
+    y -= 20
+    headers = ["ID", "Customer", "Status", "Amount", "Created"]
+    col_positions = [40, 150, 320, 420, 500]
+    for idx, header in enumerate(headers):
+        pdf.drawString(col_positions[idx], y, header)
+    y -= 15
+    pdf.setFont("Helvetica", 10)
+
+    for order in orders:
+        if y < 60:
+            y = new_page()
+        customer_name = order.customer.Username if order.customer else "Guest"
+        status_label = report_data['status_label_map'].get(order.status, order.status.title())
+        pdf.drawString(col_positions[0], y, order.order_id)
+        pdf.drawString(col_positions[1], y, customer_name[:25])
+        pdf.drawString(col_positions[2], y, status_label)
+        pdf.drawString(col_positions[3], y, f"₹{order.total_amount}")
+        pdf.drawString(col_positions[4], y, order.created_at.strftime('%Y-%m-%d %H:%M'))
+        y -= 15
+
+    pdf.save()
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="orders_report.pdf"'
+    return response
+
 def update_order_status(request, order_id):
     # Require admin session
     if 'username' not in request.session:
@@ -306,8 +504,6 @@ def update_order_status(request, order_id):
         return redirect('admin_app:admin_login_page')
     
     from customer_app.models import Order
-    from django.shortcuts import get_object_or_404
-    
     order = get_object_or_404(Order, order_id=order_id)
     
     if request.method == 'POST':
@@ -393,8 +589,6 @@ def delete_waiter(request, waiter_id):
         return redirect('admin_app:admin_login_page')
     
     from waiter_app.models import Waiter
-    from django.shortcuts import get_object_or_404
-    
     waiter = get_object_or_404(Waiter, id=waiter_id)
     display_name = waiter.display_name
     user = waiter.user

@@ -1,0 +1,259 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block content %}
+<div class="content-wrapper">
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card corona-gradient-card">
+        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+          <div>
+            <h3 class="text-white mb-1">Orders Insights & Reports</h3>
+            <p class="text-white-50 mb-0">Track performance, revenue, and download printable summaries.</p>
+          </div>
+          <div class="text-white-50 mt-3 mt-md-0">
+            <small>Showing data for</small>
+            <h5 class="mb-0">{{ start_date_value }} → {{ end_date_value }}</h5>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <form method="get" action="{% url 'admin_app:order_reports' %}" class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="start_date">Start date</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date_value }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="end_date">End date</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date_value }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="status">Order status</label>
+                <select class="form-control" id="status" name="status">
+                  <option value="">All statuses</option>
+                  {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="w-100">
+                <button type="submit" class="btn btn-gradient-primary btn-block mb-2">
+                  <i class="mdi mdi-refresh mr-1"></i> Apply Filters
+                </button>
+                <a href="{% url 'admin_app:order_reports' %}" class="btn btn-outline-secondary btn-block">Reset</a>
+              </div>
+            </div>
+          </form>
+          <div class="text-right">
+            <form method="get" action="{% url 'admin_app:download_order_report_pdf' %}">
+              <input type="hidden" name="start_date" value="{{ start_date_value }}">
+              <input type="hidden" name="end_date" value="{{ end_date_value }}">
+              <input type="hidden" name="status" value="{{ status_filter }}">
+              <button type="submit" class="btn btn-outline-info btn-sm">
+                <i class="mdi mdi-file-pdf"></i> Download PDF
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-3 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted mb-1">Total Orders</p>
+          <h3 class="mb-0">{{ total_orders }}</h3>
+          <small class="text-success">Completed: {{ completed_orders }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted mb-1">Total Revenue</p>
+          <h3 class="mb-0">₹{{ total_revenue }}</h3>
+          <small class="text-muted">Average Order: ₹{{ average_order_value }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted mb-1">Cancelled Orders</p>
+          <h3 class="mb-0">{{ cancelled_orders }}</h3>
+          <small class="text-danger">Across period selected</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted mb-1">Generated</p>
+          <h3 class="mb-0">{{ report_generated_at|date:"M d, Y" }}</h3>
+          <small class="text-muted">{{ report_generated_at|date:"H:i a" }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title d-flex justify-content-between align-items-center">
+            Status Breakdown
+            <span class="badge badge-outline-primary">{{ status_breakdown|length }} statuses</span>
+          </h4>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Orders</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in status_breakdown %}
+                  <tr>
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.count }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-center text-muted">No orders in this period.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Daily Revenue Trend</h4>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Orders</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for day in daily_summary %}
+                  <tr>
+                    <td>{{ day.day|date:"M d" }}</td>
+                    <td>{{ day.order_count }}</td>
+                    <td>₹{{ day.revenue }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted">No activity recorded.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Top Customers</h4>
+          <ul class="list-group list-group-flush">
+            {% for customer in top_customers %}
+              <li class="list-group-item d-flex justify-content-between" style="color: #1f2933 !important;">
+                <span style="color: #1f2933 !important;"><i class="mdi mdi-account text-info mr-2"></i>{{ customer.customer__Username|default:"Unknown" }}</span>
+                <span style="color: #1f2933 !important;">₹{{ customer.total_spent }} • {{ customer.order_count }} orders</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted text-center">No customer data available.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Best Selling Items</h4>
+          <ul class="list-group list-group-flush">
+            {% for item in top_items %}
+              <li class="list-group-item d-flex justify-content-between" style="color: #1f2933 !important;">
+                <span style="color: #1f2933 !important;"><i class="mdi mdi-food text-warning mr-2"></i>{{ item.food_item__name }}</span>
+                <span style="color: #1f2933 !important;">{{ item.quantity }} sold • ₹{{ item.revenue }}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted text-center">No item data available.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Orders ({{ status_filter_label }})</h4>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in orders %}
+                  <tr>
+                    <td>{{ order.order_id }}</td>
+                    <td>
+                      <strong>{{ order.customer.Username|default:"Unknown" }}</strong><br>
+                      <small class="text-muted">{{ order.customer.Email }}</small>
+                    </td>
+                    <td>{{ order.get_status_display }}</td>
+                    <td>₹{{ order.total_amount }}</td>
+                    <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted">
+                      <i class="mdi mdi-file-chart" style="font-size: 40px;"></i><br>
+                      No orders that match the selected filters.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -20,6 +20,7 @@
 
     <!-- Layout styles -->
     <link rel="stylesheet" href="{% static 'admin/assets/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/assets/css/custom-overrides.css' %}">
     <link rel="shortcut icon" href="{% static 'admin/assets/images/favicon.png' %}" />
   </head>
   <body>
@@ -73,6 +74,13 @@
 
           <li class="nav-item menu-items">
             <a class="nav-link" href="{% url 'admin_app:view_orders' %}"><span class="menu-icon"><i class="mdi mdi-cart"></i></span><span class="menu-title">Orders</span></a>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="{% url 'admin_app:order_reports' %}">
+              <span class="menu-icon"><i class="mdi mdi-file-chart"></i></span>
+              <span class="menu-title">Reports</span>
+            </a>
           </li>
 
           <li class="nav-item menu-items">
