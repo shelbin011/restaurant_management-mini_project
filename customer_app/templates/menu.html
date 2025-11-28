@@ -108,7 +108,41 @@
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count }}</span>
         {% endif %}
       </a>
+      <a href="#" id="favoritesButton" class="btn btn-outline-warning btn-sm position-relative" title="Favorites">
+        <i class="bi bi-heart"></i> Fav
+        <span id="fav-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">{{ fav_count|default:0 }}</span>
+      </a>
     </div>
+    <!-- Pagination -->
+    {% if paginator.num_pages > 1 %}
+      <nav aria-label="Menu pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category|default_if_none:'' }}&q={{ search_query }}">Previous</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+
+          {% for num in paginator.page_range %}
+            {% if num == page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num <= 2 or num > paginator.num_pages|add:'-2' or (num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2') %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}&category={{ selected_category|default_if_none:'' }}&q={{ search_query }}">{{ num }}</a></li>
+            {% elif forloop.first %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ selected_category|default_if_none:'' }}&q={{ search_query }}">Next</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
   </div>
 </header>
 
@@ -144,6 +178,11 @@
               <p>{{ item.description|default:"Tasty dish"|truncatechars:80 }}</p>
               <p class="price">₹ {{ item.price }}</p>
               <div class="d-flex justify-content-between mt-3">
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-outline-secondary btn-sm fav-toggle" data-id="{{ item.id }}" title="Toggle favorite">
+                    <i class="bi {% if item.id in favorites %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
+                  </button>
+                </div>
                 {% if request.session.Username %}
                   <form method="post" action="{% url 'customer_app:add_to_cart' item.id %}">
                     {% csrf_token %}
@@ -193,6 +232,56 @@
 <script>
   if (window.AOS) { AOS.init(); }
   if (window.GLIGHTBOX) { GLightbox({ selector: '.glightbox' }); }
+</script>
+
+<script>
+  // Favorite toggle AJAX
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.fav-toggle').forEach(btn => {
+      btn.addEventListener('click', function(){
+        const itemId = this.getAttribute('data-id');
+        fetch('{% url "customer_app:toggle_favorite" 0 %}'.replace('0', itemId), {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }).then(r => r.json()).then(data => {
+          if (data && data.status === 'ok') {
+            // toggle icon
+            const icon = this.querySelector('i');
+            if (data.favorited) {
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill', 'text-danger');
+            } else {
+              icon.classList.remove('bi-heart-fill', 'text-danger');
+              icon.classList.add('bi-heart');
+            }
+            // update badge in header if present
+            const badge = document.getElementById('fav-count');
+            if (badge) badge.textContent = data.fav_count;
+          }
+        }).catch(err => {
+          console.error('Favorite toggle failed', err);
+        });
+      });
+    });
+  });
 </script>
 
 </body>

@@ -142,6 +142,10 @@
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count }}</span>
           {% endif %}
         </a>
+        <a href="#" id="favoritesButtonHeader" class="btn btn-outline-warning btn-sm position-relative" title="Favorites">
+          <i class="bi bi-heart"></i> Fav
+          <span id="fav-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">{{ fav_count|default:0 }}</span>
+        </a>
       </div>
 
     </div>

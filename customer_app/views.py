@@ -3,6 +3,7 @@ from django.contrib import messages
 from admin_app.models import categorydb, fooditems
 from customer_app.models import regdb, Order, OrderItem, Payment
 from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid
 from django.utils import timezone
 from decimal import Decimal
@@ -10,7 +11,8 @@ from decimal import Decimal
 # Create your views here.
 def cust_home(request):
     cart_count = sum(request.session.get('cart', {}).values()) if 'cart' in request.session else 0
-    return render(request, 'customer_home.html', { 'cart_count': cart_count })
+    fav_count = len(request.session.get('favorites', []))
+    return render(request, 'customer_home.html', { 'cart_count': cart_count, 'fav_count': fav_count })
 
 
 def user_reg(request):
@@ -88,17 +90,59 @@ def view_menu(request):
             | Q(category__Category_name__icontains=search_query)
         )
 
-    print("Selected category:", selected_category)
-    print("Foods queryset:", list(foods_qs))
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(foods_qs, 12)  # 12 items per page
+    try:
+        foods_page = paginator.page(page)
+    except PageNotAnInteger:
+        foods_page = paginator.page(1)
+    except EmptyPage:
+        foods_page = paginator.page(paginator.num_pages)
+
+    # Favorites count from session
+    fav_list = request.session.get('favorites', [])
+    fav_count = len(fav_list)
+    try:
+        fav_ids = set(int(x) for x in fav_list)
+    except Exception:
+        fav_ids = set()
 
     context = {
         'categories': categories,
-        'foods': foods_qs,
+        'foods': foods_page.object_list,
+        'page_obj': foods_page,
+        'paginator': paginator,
         'selected_category': int(selected_category) if selected_category else None,
         'search_query': search_query,
         'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
+        'fav_count': fav_count,
+        'favorites': fav_ids,
     }
     return render(request, 'menu.html', context)
+
+
+def _get_favorites(session):
+    return set(session.get('favorites', []))
+
+
+def toggle_favorite(request, item_id):
+    # Toggle favorite in session; respond JSON for AJAX
+    favs = _get_favorites(request.session)
+    sid = str(item_id)
+    if sid in favs:
+        favs.remove(sid)
+        favorited = False
+    else:
+        favs.add(sid)
+        favorited = True
+    request.session['favorites'] = list(favs)
+    request.session.modified = True
+    fav_count = len(favs)
+    if request.is_ajax() or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'favorited': favorited, 'fav_count': fav_count})
+    # Non-AJAX fallback
+    return redirect('customer_app:view_menu')
 
 
 # --- Cart Utilities ---
@@ -180,7 +224,8 @@ def view_cart(request):
             'qty': qty,
             'line_total': line_total,
         })
-    context = {'lines': lines, 'total': total}
+    fav_count = len(request.session.get('favorites', []))
+    context = {'lines': lines, 'total': total, 'fav_count': fav_count}
     return render(request, 'cart.html', context)
 
 
@@ -322,6 +367,7 @@ def view_orders(request):
     context = {
         'orders': orders,
         'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
+        'fav_count': len(request.session.get('favorites', [])),
     }
     return render(request, 'orders.html', context)
 
