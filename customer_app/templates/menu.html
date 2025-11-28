@@ -97,6 +97,9 @@
       <a href="{% url 'customer_app:cust_home' %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-house"></i> Home
       </a>
+      <a href="{% url 'customer_app:view_menu' %}" class="btn btn-outline-secondary btn-sm d-md-none">
+        <i class="bi bi-list"></i> Menu
+      </a>
       {% if request.session.Username %}
         <a href="{% url 'customer_app:view_orders' %}" class="btn btn-outline-info btn-sm">
           <i class="bi bi-list-ul"></i> My Orders

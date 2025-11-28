@@ -113,6 +113,9 @@
       </nav>
 
       <div class="d-flex gap-2 align-items-center">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'customer_app:view_menu' %}">
+          <i class="bi bi-list"></i> Menu
+        </a>
         {% if request.session.Username %}
           <div class="dropdown">
             <a class="btn btn-outline-dark btn-sm dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
