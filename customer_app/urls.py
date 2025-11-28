@@ -17,6 +17,7 @@ path("register/", views.user_reg, name="user_reg"),
     path("delete_user/", views.delete_user, name="delete_user"),
 path('menu/', views.view_menu, name='view_menu'),
 path('favorite/toggle/<int:item_id>/', views.toggle_favorite, name='toggle_favorite'),
+path('favorites/', views.favorites_view, name='favorites'),
 
 # Cart routes
 path('cart/', views.view_cart, name='view_cart'),

@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Favorites</title>
+  <link href="{% static 'customer_app/vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <style>
+    .fav-item { border-radius:12px; padding:12px; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.06); }
+    @media (max-width:576px) { .fav-item { padding:10px; } }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4>Favorites</h4>
+      <a class="btn btn-outline-secondary" href="{% url 'customer_app:view_menu' %}">Back to Menu</a>
+    </div>
+
+    {% if items %}
+      <div class="row g-3">
+        {% for item in items %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <div class="fav-item">
+              {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;">
+              {% endif %}
+              <div class="mt-2 d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-bold">{{ item.name }}</div>
+                  <div class="small text-muted">₹ {{ item.price }}</div>
+                </div>
+                <div>
+                  <button class="btn btn-sm btn-outline-secondary fav-toggle" data-id="{{ item.id }}">Toggle</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-info">You have no favorites yet.</div>
+    {% endif %}
+  </div>
+
+  <script src="{% static 'customer_app/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    // Reuse the favorite toggle via POST
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('.fav-toggle').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const id = this.getAttribute('data-id');
+          fetch('{% url "customer_app:toggle_favorite" 0 %}'.replace('0', id), {
+            method: 'POST', headers: {'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'}
+          }).then(r => r.json()).then(()=> window.location.reload()).catch(()=> window.location.reload());
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -58,7 +58,9 @@
                 <div class="ms-3 text-end">
                   <form method="post" action="{% url 'customer_app:update_cart_quantity' l.item.id %}" class="ajax-qty-form d-flex align-items-center">
                     {% csrf_token %}
-                    <input type="number" name="qty" min="0" value="{{ l.qty }}" class="form-control form-control-sm qty-input" style="width:80px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary qty-dec" data-target-input="qty-{{ forloop.counter0 }}">-</button>
+                    <input id="qty-{{ forloop.counter0 }}" type="number" name="qty" min="0" value="{{ l.qty }}" class="form-control form-control-sm qty-input mx-1" style="width:80px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary qty-inc" data-target-input="qty-{{ forloop.counter0 }}">+</button>
                     <button class="btn btn-sm btn-primary ms-2" type="submit">Update</button>
                   </form>
                   <div class="mt-2">
@@ -132,6 +134,20 @@
             // fallback to full-submit
             form.submit();
           });
+        });
+      });
+      // plus/minus handlers
+      document.querySelectorAll('.qty-inc, .qty-dec').forEach(btn => {
+        btn.addEventListener('click', function(){
+          const targetId = this.getAttribute('data-target-input');
+          const input = document.getElementById(targetId);
+          if (!input) return;
+          let val = parseInt(input.value || '0', 10);
+          if (this.classList.contains('qty-inc')) val = val + 1; else val = Math.max(0, val - 1);
+          input.value = val;
+          // submit the enclosing form for AJAX handling
+          const form = input.closest('form');
+          if (form) form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
         });
       });
     });

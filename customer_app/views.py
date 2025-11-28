@@ -145,6 +145,21 @@ def toggle_favorite(request, item_id):
     return redirect('customer_app:view_menu')
 
 
+def favorites_view(request):
+    fav_list = request.session.get('favorites', [])
+    try:
+        fav_ids = [int(x) for x in fav_list]
+    except Exception:
+        fav_ids = []
+    items = fooditems.objects.filter(id__in=fav_ids)
+    context = {
+        'items': items,
+        'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
+        'fav_count': len(fav_list),
+    }
+    return render(request, 'favorites.html', context)
+
+
 # --- Cart Utilities ---
 def _get_cart(session):
     cart = session.get('cart', {})
