@@ -5,6 +5,26 @@
   <meta charset="utf-8">
   <title>Your Cart</title>
   <link href="{% static 'customer_app/vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <style>
+    /* Mobile: hide table and show card grid with 2 columns */
+    .cart-grid { display: none; }
+    @media (max-width: 576px) {
+      .table-responsive { display: none; }
+      .cart-grid { display: block; }
+      .cart-card {
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        padding: 0.6rem;
+        background: #fff;
+      }
+      .cart-card .img-sm { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; }
+      .cart-card .item-name { font-weight: 700; font-size: 0.95rem; }
+      .cart-card .small-muted { font-size: 0.8rem; color: #666; }
+      .cart-card .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.78rem; }
+      .qty-input { max-width: 80px; padding: 0.25rem 0.4rem; text-align: center; }
+      .qty-form { gap: 0.35rem; }
+    }
+  </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -16,51 +36,41 @@
     <div class="card">
       <div class="card-body">
         {% if lines %}
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th style="width: 140px;">Qty</th>
-                <th>Price</th>
-                <th>Total</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for l in lines %}
-              <tr>
-                <td>
-                  <div class="d-flex align-items-center">
-                    {% if l.item.image %}
-                      <img src="{{ l.item.image.url }}" alt="{{ l.item.name }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;" class="mr-2">
-                    {% endif %}
-                    <div>
-                      <div class="fw-bold">{{ l.item.name }}</div>
-                      <div class="text-muted small">{{ l.item.category.Category_name }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <form method="post" action="{% url 'customer_app:update_cart_quantity' l.item.id %}" class="d-flex">
+        <div class="cart-list">
+          {% for l in lines %}
+            <div class="cart-item mb-3 p-3 bg-white rounded-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="flex-shrink-0">
+                  {% if l.item.image %}
+                    <img src="{{ l.item.image.url }}" alt="{{ l.item.name }}" style="width:84px;height:84px;object-fit:cover;border-radius:8px;">
+                  {% else %}
+                    <img src="{% static 'customer_app/images/menu/menu-item-1.png' %}" alt="{{ l.item.name }}" style="width:84px;height:84px;object-fit:cover;border-radius:8px;">
+                  {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold">{{ l.item.name }}</div>
+                  <div class="text-muted small">{{ l.item.category.Category_name }}</div>
+                </div>
+                <div class="d-flex flex-column align-items-end">
+                  <div class="mb-2">₹ {{ l.item.price }}</div>
+                  <div class="text-muted small">₹ {{ l.line_total|floatformat:2 }}</div>
+                </div>
+                <div class="ms-3 text-end">
+                  <form method="post" action="{% url 'customer_app:update_cart_quantity' l.item.id %}" class="ajax-qty-form d-flex align-items-center">
                     {% csrf_token %}
-                    <input type="number" min="0" name="qty" value="{{ l.qty }}" class="form-control form-control-sm mr-2" style="max-width:80px;">
-                    <button class="btn btn-sm btn-primary" type="submit">Update</button>
+                    <input type="number" name="qty" min="0" value="{{ l.qty }}" class="form-control form-control-sm qty-input" style="width:80px;">
+                    <button class="btn btn-sm btn-primary ms-2" type="submit">Update</button>
                   </form>
-                </td>
-                <td>₹ {{ l.item.price }}</td>
-                <td>₹ {{ l.line_total|floatformat:2 }}</td>
-                <td class="text-right">
-                  <a class="btn btn-sm btn-outline-danger" href="{% url 'customer_app:remove_from_cart' l.item.id %}">Remove</a>
-                </td>
-              </tr>
-              {% endfor %}
-              <tr>
-                <td colspan="3" class="text-right"><strong>Grand Total</strong></td>
-                <td colspan="2"><strong>₹ {{ total|floatformat:2 }}</strong></td>
-              </tr>
-            </tbody>
-          </table>
+                  <div class="mt-2">
+                    <a class="btn btn-sm btn-outline-danger" href="{% url 'customer_app:remove_from_cart' l.item.id %}">Remove</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="text-end mt-3">
+          <strong>Grand Total: ₹ {{ total|floatformat:2 }}</strong>
         </div>
         <div class="text-right">
           {% if request.session.Username %}
@@ -80,6 +90,52 @@
     </div>
   </div>
   <script src="{% static 'customer_app/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    // Helper to read CSRF token from cookie
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const forms = document.querySelectorAll('.ajax-qty-form');
+      forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const url = form.getAttribute('action');
+          const formData = new FormData(form);
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+          }).then(r => {
+            if (r.ok) return r.json().catch(() => null);
+            throw new Error('Network response was not ok');
+          }).then(data => {
+            // If backend returned success, reload to reflect totals
+            window.location.reload();
+          }).catch(err => {
+            console.error('Quantity update failed', err);
+            // fallback to full-submit
+            form.submit();
+          });
+        });
+      });
+    });
+  </script>
 </body>
 </html>
 

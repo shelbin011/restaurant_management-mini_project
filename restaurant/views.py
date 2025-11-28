@@ -4,6 +4,10 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib.auth.models import User
 from customer_app.models import regdb
 from waiter_app.models import Waiter
+from django.conf import settings
+from django.http import JsonResponse
+import os
+from admin_app.models import fooditems
 
 
 def unified_login(request):
@@ -68,3 +72,23 @@ def unified_logout(request):
         pass
     messages.success(request, 'Logged out successfully.')
     return redirect('login')
+
+
+def debug_media_check(request):
+    """Development helper: return a JSON list of food items with image URL and file existence.
+
+    Only enabled when DEBUG is True or SERVE_MEDIA=1 is set to avoid exposing in production.
+    """
+    serve_media = settings.DEBUG or os.environ.get('SERVE_MEDIA') == '1'
+    if not serve_media:
+        return JsonResponse({'error': 'media check disabled'}, status=403)
+
+    rows = []
+    for it in fooditems.objects.all():
+        img_field = it.image.name if it.image else ''
+        # build URL and filesystem path
+        url = it.image.url if it.image else ''
+        fs_path = os.path.join(settings.MEDIA_ROOT, img_field) if img_field else ''
+        exists = os.path.exists(fs_path) if fs_path else False
+        rows.append({'id': it.id, 'name': it.name, 'image_name': img_field, 'image_url': url, 'file_exists': exists, 'fs_path': fs_path})
+    return JsonResponse(rows, safe=False)

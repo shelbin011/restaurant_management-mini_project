@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin_app/', include(('admin_app.urls', 'admin_app'), namespace='admin_app')),
     path('', include(('customer_app.urls', 'customer_app'), namespace='customer_app')),
     path('waiter_app/', include(('waiter_app.urls', 'waiter_app'), namespace='waiter_app')),
+    path('debug/media-check/', project_views.debug_media_check, name='debug_media_check'),
 ]
 
 # Serve media files in development or when explicitly requested via env var

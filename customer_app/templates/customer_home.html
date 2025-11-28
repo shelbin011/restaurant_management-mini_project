@@ -24,6 +24,52 @@
 
   <link href="{% static 'customer_app/css/main.css' %}" rel="stylesheet">
 
+  <style>
+    /* Header button styling to match site theme and scale on small screens */
+    header#header .btn {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.88rem;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* Primary/outline theme colors tuned to match login/register theme */
+    header#header .btn.btn-primary,
+    header#header .btn.btn-primary:focus,
+    header#header .btn.btn-primary:hover {
+      background: #ea6d24;
+      border-color: #ea6d24;
+      color: #fff;
+    }
+
+    header#header .btn.btn-outline-primary {
+      background: transparent;
+      color: #ea6d24;
+      border-color: #ea6d24;
+    }
+
+    header#header .btn.btn-outline-danger,
+    header#header .btn.btn-outline-danger:focus {
+      color: #ea6d24;
+      border-color: #ea6d24;
+      background: transparent;
+    }
+
+    /* Cart badge should remain small and legible on mobile */
+    header#header .badge {
+      font-size: 0.65rem;
+      padding: 0.25rem 0.45rem;
+    }
+
+    @media (max-width: 768px) {
+      header#header .btn { font-size: 0.78rem; padding: 0.28rem 0.45rem; }
+      .sitename { font-size: 1.1rem; }
+    }
+  </style>
+
   </head>
 
 <body class="index-page">

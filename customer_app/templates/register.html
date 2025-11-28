@@ -134,9 +134,22 @@ body {
   text-decoration: none;
 }
 
-@media (max-width: 420px) {
-  .container { padding: 1.6rem 1.2rem; border-radius: 14px; }
-  .brand { font-size: 1.4rem; }
+@media (max-width: 480px) {
+  .container {
+    padding: 1.2rem 1rem;
+    border-radius: 12px;
+    width: 96%;
+    max-width: 560px;
+  }
+  .brand { font-size: 1.35rem; }
+  .form-wrap input { height: 48px; }
+  .form-wrap button { height: 50px; font-size: 1rem; }
+}
+
+/* Extra small devices: make form full-width and comfortable for tapping */
+@media (max-width: 360px) {
+  .container { padding: 1rem; }
+  .brand { font-size: 1.2rem; }
 }
 </style>
 </head>

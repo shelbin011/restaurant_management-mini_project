@@ -21,7 +21,7 @@ body {
     align-items: center;
     background: #f8fafc;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Floating Background Circles */
@@ -52,6 +52,12 @@ body {
     z-index: 2;
     animation: slideInUp 0.8s ease-out;
     color: #262833;
+}
+
+@media (max-width: 480px) {
+    .container { width: 96%; padding: 1.2rem 0.9rem; border-radius: 12px; }
+    .form-group { max-width: 100%; }
+    button { padding: 0.9rem; font-size: 1rem; }
 }
 
 @keyframes slideInUp {
