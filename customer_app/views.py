@@ -74,52 +74,85 @@ def delete_user(request):
 
 
 def view_menu(request):
-    categories = categorydb.objects.all()
-    selected_category = request.GET.get('category')
-    search_query = request.GET.get('q', '')
-
-    from django.db.models import Q
-    foods_qs = fooditems.objects.select_related('category').filter(availability=True).order_by('name')
-
-    if selected_category:
-        foods_qs = foods_qs.filter(category_id=selected_category)
-    if search_query:
-        foods_qs = foods_qs.filter(
-            Q(name__icontains=search_query)
-            | Q(description__icontains=search_query)
-            | Q(category__Category_name__icontains=search_query)
-        )
-
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(foods_qs, 12)  # 12 items per page
     try:
-        foods_page = paginator.page(page)
-    except PageNotAnInteger:
-        foods_page = paginator.page(1)
-    except EmptyPage:
-        foods_page = paginator.page(paginator.num_pages)
+        categories = categorydb.objects.all()
+        selected_category = request.GET.get('category', '').strip() or None
+        search_query = request.GET.get('q', '').strip()
 
-    # Favorites count from session
-    fav_list = request.session.get('favorites', [])
-    fav_count = len(fav_list)
-    try:
-        fav_ids = set(int(x) for x in fav_list)
-    except Exception:
-        fav_ids = set()
+        from django.db.models import Q
+        foods_qs = fooditems.objects.select_related('category').filter(availability=True).order_by('name')
 
-    context = {
-        'categories': categories,
-        'foods': foods_page.object_list,
-        'page_obj': foods_page,
-        'paginator': paginator,
-        'selected_category': int(selected_category) if selected_category else None,
-        'search_query': search_query,
-        'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
-        'fav_count': fav_count,
-        'favorites': fav_ids,
-    }
-    return render(request, 'menu.html', context)
+        if selected_category:
+            try:
+                selected_category_int = int(selected_category)
+                foods_qs = foods_qs.filter(category_id=selected_category_int)
+            except (ValueError, TypeError):
+                selected_category = None
+        
+        if search_query:
+            foods_qs = foods_qs.filter(
+                Q(name__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(category__Category_name__icontains=search_query)
+            )
+
+        # Pagination
+        page = request.GET.get('page', '1').strip()
+        try:
+            page_num = int(page) if page else 1
+        except (ValueError, TypeError):
+            page_num = 1
+        
+        paginator = Paginator(foods_qs, 12)  # 12 items per page
+        try:
+            foods_page = paginator.page(page_num)
+        except PageNotAnInteger:
+            foods_page = paginator.page(1)
+        except EmptyPage:
+            foods_page = paginator.page(paginator.num_pages)
+
+        # Process food items and ensure images work
+        foods_with_images = []
+        for food in foods_page.object_list:
+            try:
+                # Test if image URL is accessible
+                if food.image:
+                    _ = food.image.url
+                foods_with_images.append(food)
+            except Exception as e:
+                # If image is broken, set it to None
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Image error for food item {food.id}: {str(e)}")
+                food.image = None
+                foods_with_images.append(food)
+
+        # Favorites count from session
+        fav_list = request.session.get('favorites', [])
+        fav_count = len(fav_list)
+        try:
+            fav_ids = set(int(x) for x in fav_list if x)
+        except (ValueError, TypeError):
+            fav_ids = set()
+
+        context = {
+            'categories': categories,
+            'foods': foods_with_images,
+            'page_obj': foods_page,
+            'paginator': paginator,
+            'selected_category': int(selected_category) if selected_category else None,
+            'search_query': search_query,
+            'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
+            'fav_count': fav_count,
+            'favorites': fav_ids,
+        }
+        return render(request, 'menu.html', context)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in view_menu: {str(e)}", exc_info=True)
+        messages.error(request, 'An error occurred while loading the menu. Please try again.')
+        return redirect('customer_app:cust_home')
 
 
 def _get_favorites(session):
