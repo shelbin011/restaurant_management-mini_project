@@ -52,6 +52,24 @@
       </div>
 
       <div class="col-lg-4">
+        <div class="card mb-3">
+          <div class="card-header">
+            <h5 class="mb-0">Promo Code</h5>
+          </div>
+          <div class="card-body">
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="promo_code" placeholder="Enter promo code" 
+                value="{{ promo_code|default:'' }}">
+              <button class="btn btn-outline-primary" type="button" id="apply_promo_btn">Apply</button>
+            </div>
+            <div id="promo_message" class="small"></div>
+            <div id="promo_discount" class="alert alert-success mt-2" style="display:none;">
+              <strong>Discount Applied!</strong>
+              <div>Savings: <span id="discount_amount">₹0</span></div>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0">Order Summary</h5>
@@ -72,9 +90,18 @@
             {% endfor %}
             
             <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span>Subtotal:</span>
+              <span class="fw-bold">₹ <span id="subtotal">{{ total|floatformat:2 }}</span></span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span>Discount:</span>
+              <span class="text-success fw-bold">- ₹ <span id="total_discount">0.00</span></span>
+            </div>
+            <hr>
             <div class="d-flex justify-content-between align-items-center">
               <h5 class="mb-0">Total Amount:</h5>
-              <h4 class="mb-0 text-success">₹ {{ total|floatformat:2 }}</h4>
+              <h4 class="mb-0 text-success">₹ <span id="final_total">{{ total|floatformat:2 }}</span></h4>
             </div>
           </div>
         </div>
@@ -83,6 +110,57 @@
   </div>
 
   <script src="{% static 'customer_app/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  
+  <script>
+    const subtotalAmount = {{ total|floatformat:2 }};
+    let appliedDiscount = 0;
+
+    document.getElementById('apply_promo_btn').addEventListener('click', function() {
+      const promoCode = document.getElementById('promo_code').value.trim().toUpperCase();
+      
+      if (!promoCode) {
+        document.getElementById('promo_message').textContent = 'Please enter a promo code';
+        document.getElementById('promo_message').className = 'small text-danger';
+        return;
+      }
+
+      // AJAX call to apply promo code
+      fetch('{% url "customer_app:apply_promo" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'code=' + encodeURIComponent(promoCode)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          appliedDiscount = data.discount_amount;
+          const finalTotal = subtotalAmount - appliedDiscount;
+          
+          document.getElementById('promo_message').textContent = data.message;
+          document.getElementById('promo_message').className = 'small text-success';
+          document.getElementById('total_discount').textContent = appliedDiscount.toFixed(2);
+          document.getElementById('final_total').textContent = finalTotal.toFixed(2);
+          document.getElementById('promo_discount').style.display = 'block';
+          document.getElementById('discount_amount').textContent = '₹' + appliedDiscount.toFixed(2);
+        } else {
+          document.getElementById('promo_message').textContent = data.message || 'Invalid promo code';
+          document.getElementById('promo_message').className = 'small text-danger';
+          document.getElementById('promo_discount').style.display = 'none';
+          appliedDiscount = 0;
+          document.getElementById('total_discount').textContent = '0.00';
+          document.getElementById('final_total').textContent = subtotalAmount.toFixed(2);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('promo_message').textContent = 'Error applying promo code';
+        document.getElementById('promo_message').className = 'small text-danger';
+      });
+    });
+  </script>
   
   <!-- Flash messages -->
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>

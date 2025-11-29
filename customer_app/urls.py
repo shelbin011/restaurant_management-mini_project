@@ -28,7 +28,10 @@ path('cart/update/<int:item_id>/', views.update_cart_quantity, name='update_cart
 # Order and payment routes
 path('checkout/', views.checkout, name='checkout'),
 path('payment/<str:order_id>/', views.payment, name='payment'),
-path('orders/', views.view_orders, name='view_orders')
+path('orders/', views.view_orders, name='view_orders'),
+path('order/<str:order_id>/', views.order_detail, name='order_detail'),
 
-
+# Promo and review routes
+path('promo/apply/', views.apply_promo, name='apply_promo'),
+path('review/<str:order_id>/', views.submit_review, name='submit_review'),
 ]

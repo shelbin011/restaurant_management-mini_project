@@ -71,3 +71,66 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment for Order {self.order.order_id} - {self.status}"
+
+
+class Review(models.Model):
+    """Customer reviews for orders and food items"""
+    RATING_CHOICES = [(i, f"{i} Star{'s' if i != 1 else ''}") for i in range(1, 6)]
+    
+    customer = models.ForeignKey(regdb, on_delete=models.CASCADE, related_name='reviews')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
+    food_item = models.ForeignKey('admin_app.fooditems', on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    def __str__(self):
+        return f"Review by {self.customer.Username} - {self.rating} stars"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+
+class PromoCode(models.Model):
+    """Discount promo codes"""
+    code = models.CharField(max_length=50, unique=True)
+    discount_percent = models.IntegerField(help_text="Discount percentage (0-100)")
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+    valid_from = models.DateTimeField()
+    valid_until = models.DateTimeField()
+    usage_limit = models.IntegerField(null=True, blank=True)
+    usage_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    def is_valid_now(self):
+        now = timezone.now()
+        return self.is_active and self.valid_from <= now <= self.valid_until
+    
+    def calculate_discount(self, order_amount):
+        if not self.is_valid_now():
+            return 0
+        discount = (order_amount * self.discount_percent) / 100
+        if self.max_discount_amount:
+            discount = min(discount, float(self.max_discount_amount))
+        return discount
+    
+    def __str__(self):
+        return f"{self.code} - {self.discount_percent}% off"
+
+
+class OrderStatusHistory(models.Model):
+    """Track order status changes"""
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_history')
+    status = models.CharField(max_length=20, choices=Order.ORDER_STATUS_CHOICES)
+    changed_at = models.DateTimeField(default=timezone.now)
+    updated_by = models.CharField(max_length=100, blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.order.order_id} - {self.status} at {self.changed_at}"
+    
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name_plural = "Order Status Histories"

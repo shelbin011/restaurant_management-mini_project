@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order Details</title>
+  <link href="{% static 'customer_app/vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'customer_app/vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <style>
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d1ecf1; color: #0c5460; }
+    .status-preparing { background: #d4edda; color: #155724; }
+    .status-ready { background: #c3e6cb; color: #155724; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .timeline { position: relative; padding: 2rem 0; }
+    .timeline-item { margin-bottom: 2rem; position: relative; padding-left: 2rem; }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -0.5rem;
+      top: 0;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      background: #007bff;
+      border: 2px solid white;
+    }
+    .timeline-item.active::before { background: #28a745; }
+    .rating-form { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="mb-3">
+      <a href="{% url 'customer_app:view_orders' %}" class="btn btn-outline-secondary">← Back to Orders</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Order {{ order.order_id }}</h5>
+          <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>Order Information</h6>
+            <p><strong>Date:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+            <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Delivery Details</h6>
+            <p><strong>Address:</strong> {{ order.delivery_address }}</p>
+            <p><strong>Contact:</strong> {{ order.contact_number }}</p>
+          </div>
+        </div>
+
+        <h6>Order Items</h6>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.items.all %}
+              <tr>
+                <td>{{ item.food_item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>₹{{ item.line_total }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <h6 class="mt-4">Order Status Timeline</h6>
+        <div class="timeline">
+          {% for status in order.status_history.all %}
+            <div class="timeline-item {% if status.status == order.status %}active{% endif %}">
+              <strong>{{ status.get_status_display }}</strong>
+              <br>
+              <small class="text-muted">{{ status.changed_at|date:"M d, H:i" }}</small>
+              {% if status.note %}<p class="text-sm">{{ status.note }}</p>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if order.reviews.exists %}
+          <h6 class="mt-4">Your Review</h6>
+          {% with review=order.reviews.first %}
+            <div class="alert alert-info">
+              <strong>Rating:</strong> {{ review.rating }}/5 ⭐
+              <br>
+              <strong>Comment:</strong> {{ review.comment }}
+              <br>
+              <small>Reviewed on {{ review.created_at|date:"M d, Y" }}</small>
+            </div>
+          {% endwith %}
+        {% else %}
+          <div class="rating-form">
+            <h6>Share Your Feedback</h6>
+            <form method="post" action="{% url 'customer_app:submit_review' order.order_id %}">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label">Rating</label>
+                <select name="rating" class="form-select" required>
+                  <option value="">Select rating...</option>
+                  <option value="5">5 Stars - Excellent</option>
+                  <option value="4">4 Stars - Good</option>
+                  <option value="3">3 Stars - Average</option>
+                  <option value="2">2 Stars - Poor</option>
+                  <option value="1">1 Star - Very Poor</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Comment</label>
+                <textarea name="comment" class="form-control" rows="3" placeholder="Share your experience..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Submit Review</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <script src="{% static 'customer_app/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

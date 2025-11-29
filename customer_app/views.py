@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from admin_app.models import categorydb, fooditems
-from customer_app.models import regdb, Order, OrderItem, Payment
+from customer_app.models import regdb, Order, OrderItem, Payment, Review, PromoCode, OrderStatusHistory
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid
@@ -377,7 +377,7 @@ def view_orders(request):
         return redirect('customer_app:user_log')
     
     customer = get_object_or_404(regdb, Username=request.session['Username'])
-    orders = Order.objects.filter(customer=customer).prefetch_related('items__food_item', 'payment')
+    orders = Order.objects.filter(customer=customer).prefetch_related('items__food_item', 'payment', 'status_history')
     
     context = {
         'orders': orders,
@@ -385,4 +385,73 @@ def view_orders(request):
         'fav_count': len(request.session.get('favorites', [])),
     }
     return render(request, 'orders.html', context)
+
+
+def apply_promo(request):
+    """AJAX endpoint to validate and apply promo code"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    
+    code = request.POST.get('code', '').strip().upper()
+    try:
+        promo = PromoCode.objects.get(code=code)
+        if not promo.is_valid_now():
+            return JsonResponse({'status': 'error', 'message': 'Promo code expired'})
+        if promo.usage_limit and promo.usage_count >= promo.usage_limit:
+            return JsonResponse({'status': 'error', 'message': 'Promo code limit reached'})
+        request.session['promo_code'] = code
+        request.session.modified = True
+        return JsonResponse({'status': 'ok', 'message': f'Promo code applied: {promo.discount_percent}% off', 'code': code})
+    except PromoCode.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Invalid promo code'})
+
+
+def submit_review(request, order_id):
+    """Submit a review for an order"""
+    if request.method != 'POST':
+        return redirect('customer_app:view_orders')
+    if 'Username' not in request.session:
+        messages.warning(request, 'Please login to submit a review.')
+        return redirect('customer_app:user_log')
+    
+    customer = get_object_or_404(regdb, Username=request.session['Username'])
+    order = get_object_or_404(Order, order_id=order_id, customer=customer)
+    
+    rating = request.POST.get('rating')
+    comment = request.POST.get('comment', '')
+    
+    if not rating:
+        messages.error(request, 'Rating is required')
+        return redirect('customer_app:view_orders')
+    
+    review, created = Review.objects.get_or_create(
+        customer=customer,
+        order=order,
+        defaults={'rating': int(rating), 'comment': comment}
+    )
+    if not created:
+        review.rating = int(rating)
+        review.comment = comment
+        review.save()
+    
+    messages.success(request, 'Review submitted successfully!')
+    return redirect('customer_app:view_orders')
+
+
+def order_detail(request, order_id):
+    """Display detailed order information with status history and review form"""
+    if 'Username' not in request.session:
+        messages.warning(request, 'Please login to view order details.')
+        return redirect('customer_app:user_log')
+    
+    customer = get_object_or_404(regdb, Username=request.session['Username'])
+    order = get_object_or_404(Order, order_id=order_id, customer=customer)
+    
+    context = {
+        'order': order,
+        'cart_count': sum(_get_cart(request.session).values()) if 'cart' in request.session else 0,
+        'fav_count': len(request.session.get('favorites', [])),
+    }
+    return render(request, 'order_detail.html', context)
+
 
