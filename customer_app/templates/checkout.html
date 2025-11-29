@@ -53,19 +53,27 @@
 
       <div class="col-lg-4">
         <div class="card mb-3">
-          <div class="card-header">
-            <h5 class="mb-0">Promo Code</h5>
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-ticket-perforated"></i> Promo Code</h5>
           </div>
           <div class="card-body">
             <div class="input-group mb-2">
               <input type="text" class="form-control" id="promo_code" placeholder="Enter promo code" 
-                value="{{ promo_code|default:'' }}">
-              <button class="btn btn-outline-primary" type="button" id="apply_promo_btn">Apply</button>
+                value="{{ promo_code|default:'' }}" autocomplete="off">
+              <button class="btn btn-primary" type="button" id="apply_promo_btn">
+                <i class="bi bi-check-circle"></i> Apply
+              </button>
             </div>
             <div id="promo_message" class="small"></div>
-            <div id="promo_discount" class="alert alert-success mt-2" style="display:none;">
-              <strong>Discount Applied!</strong>
-              <div>Savings: <span id="discount_amount">₹0</span></div>
+            <div id="promo_discount" class="alert alert-success mt-3 mb-0" style="display:none;">
+              <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-check-circle-fill text-success me-2" style="font-size:1.2rem;"></i>
+                <strong>Discount Applied!</strong>
+              </div>
+              <div class="ms-4">
+                <div class="mb-1">Savings: <span id="discount_amount" class="fw-bold text-success">₹0</span></div>
+                <small class="text-muted">Expires: <span id="expiry_date">-</span></small>
+              </div>
             </div>
           </div>
         </div>
@@ -119,10 +127,15 @@
       const promoCode = document.getElementById('promo_code').value.trim().toUpperCase();
       
       if (!promoCode) {
-        document.getElementById('promo_message').textContent = 'Please enter a promo code';
+        document.getElementById('promo_message').innerHTML = '<i class="bi bi-exclamation-circle"></i> Please enter a promo code';
         document.getElementById('promo_message').className = 'small text-danger';
         return;
       }
+
+      // Disable button while processing
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Applying...';
 
       // AJAX call to apply promo code
       fetch('{% url "customer_app:apply_promo" %}', {
@@ -135,21 +148,42 @@
       })
       .then(response => response.json())
       .then(data => {
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.status === 'ok') {
           appliedDiscount = data.discount_amount;
           const finalTotal = subtotalAmount - appliedDiscount;
           
-          document.getElementById('promo_message').textContent = data.message;
+          document.getElementById('promo_message').innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> ' + data.message;
           document.getElementById('promo_message').className = 'small text-success';
           document.getElementById('total_discount').textContent = appliedDiscount.toFixed(2);
           document.getElementById('final_total').textContent = finalTotal.toFixed(2);
           document.getElementById('promo_discount').style.display = 'block';
           document.getElementById('discount_amount').textContent = '₹' + appliedDiscount.toFixed(2);
+          if (data.expiry_date) {
+            document.getElementById('expiry_date').textContent = data.expiry_date;
+          }
+          // Disable input after successful application
+          document.getElementById('promo_code').disabled = true;
         } else {
-          document.getElementById('promo_message').textContent = data.message || 'Invalid promo code';
+          document.getElementById('promo_message').innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + (data.message || 'Invalid promo code');
           document.getElementById('promo_message').className = 'small text-danger';
           document.getElementById('promo_discount').style.display = 'none';
           appliedDiscount = 0;
+          document.getElementById('total_discount').textContent = '0.00';
+          document.getElementById('final_total').textContent = subtotalAmount.toFixed(2);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('promo_message').innerHTML = '<i class="bi bi-exclamation-circle"></i> Error applying promo code';
+        document.getElementById('promo_message').className = 'small text-danger';
+      })
+      .finally(() => {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Apply';
+      });
+    });
+  </script>
           document.getElementById('total_discount').textContent = '0.00';
           document.getElementById('final_total').textContent = subtotalAmount.toFixed(2);
         }

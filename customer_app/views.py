@@ -156,24 +156,42 @@ def view_menu(request):
 
 
 def _get_favorites(session):
-    return set(session.get('favorites', []))
+    """Get favorites as a list of strings from session"""
+    favs = session.get('favorites', [])
+    if not isinstance(favs, list):
+        favs = []
+    return [str(f) for f in favs]
 
 
 def toggle_favorite(request, item_id):
-    # Toggle favorite in session; respond JSON for AJAX
-    favs = _get_favorites(request.session)
-    sid = str(item_id)
-    if sid in favs:
-        favs.remove(sid)
+    """Toggle favorite in session; respond JSON for AJAX"""
+    # Ensure session is initialized
+    if 'favorites' not in request.session:
+        request.session['favorites'] = []
+    
+    favs_list = _get_favorites(request.session)
+    item_id_str = str(item_id)
+    
+    if item_id_str in favs_list:
+        favs_list.remove(item_id_str)
         favorited = False
     else:
-        favs.add(sid)
+        favs_list.append(item_id_str)
         favorited = True
-    request.session['favorites'] = list(favs)
+    
+    request.session['favorites'] = favs_list
     request.session.modified = True
-    fav_count = len(favs)
-    if request.is_ajax() or request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'ok', 'favorited': favorited, 'fav_count': fav_count})
+    fav_count = len(favs_list)
+    
+    # Always return JSON for AJAX requests
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    if is_ajax or request.method == 'POST':
+        return JsonResponse({
+            'status': 'ok',
+            'favorited': favorited,
+            'fav_count': fav_count,
+            'message': 'Added to favorites!' if favorited else 'Removed from favorites!'
+        })
     # Non-AJAX fallback
     return redirect('customer_app:view_menu')
 
@@ -421,22 +439,82 @@ def view_orders(request):
 
 
 def apply_promo(request):
-    """AJAX endpoint to validate and apply promo code"""
+    """AJAX endpoint to validate and apply promo code with expiry checks"""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid method'})
     
     code = request.POST.get('code', '').strip().upper()
+    if not code:
+        return JsonResponse({'status': 'error', 'message': 'Please enter a promo code'})
+    
     try:
         promo = PromoCode.objects.get(code=code)
-        if not promo.is_valid_now():
-            return JsonResponse({'status': 'error', 'message': 'Promo code expired'})
+        
+        # Check if code is active
+        if not promo.is_active:
+            return JsonResponse({'status': 'error', 'message': 'This promo code is no longer active'})
+        
+        # Check if code has expired
+        now = timezone.now()
+        if now < promo.valid_from:
+            valid_from_str = promo.valid_from.strftime('%d %b %Y')
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Promo code not yet valid. Valid from {valid_from_str}'
+            })
+        
+        if now > promo.valid_until:
+            expired_str = promo.valid_until.strftime('%d %b %Y')
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Promo code expired on {expired_str}'
+            })
+        
+        # Check usage limits
         if promo.usage_limit and promo.usage_count >= promo.usage_limit:
             return JsonResponse({'status': 'error', 'message': 'Promo code limit reached'})
+        
+        # Check minimum order amount
+        cart = _get_cart(request.session)
+        total_amount = 0
+        for item_id, qty in cart.items():
+            try:
+                item = fooditems.objects.get(id=int(item_id))
+                total_amount += float(item.price) * qty
+            except (fooditems.DoesNotExist, ValueError):
+                continue
+        
+        if total_amount < float(promo.min_order_amount):
+            min_amount = promo.min_order_amount
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Minimum order amount of ₹{min_amount} required for this promo code'
+            })
+        
+        # Calculate discount
+        discount_amount = float(promo.calculate_discount(total_amount))
+        
+        # Apply promo code
         request.session['promo_code'] = code
         request.session.modified = True
-        return JsonResponse({'status': 'ok', 'message': f'Promo code applied: {promo.discount_percent}% off', 'code': code})
+        
+        expiry_str = promo.valid_until.strftime('%d %b %Y')
+        return JsonResponse({
+            'status': 'ok',
+            'message': f'✓ Promo code applied! {promo.discount_percent}% off (expires {expiry_str})',
+            'code': code,
+            'discount_amount': discount_amount,
+            'discount_percent': promo.discount_percent,
+            'expiry_date': expiry_str
+        })
+    
     except PromoCode.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Invalid promo code'})
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error applying promo code: {str(e)}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': 'Error applying promo code. Please try again.'})
 
 
 def submit_review(request, order_id):
